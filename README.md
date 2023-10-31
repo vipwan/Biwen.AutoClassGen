@@ -30,7 +30,8 @@ public interface ITest2Interface
 - 2.标注需要生成的类
 
 ```c#
-
+    //支持多次标注，可以生成多个类
+    [AutoGen("MyClassClone", "Biwen.AutoClassGen.TestConsole.Classes")]
     [AutoGen("MyClass", "Biwen.AutoClassGen.TestConsole.Classes")]
     public interface IMyClass : ITestInterface, ITest2Interface
     {

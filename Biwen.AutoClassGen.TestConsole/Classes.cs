@@ -3,6 +3,8 @@
 namespace Biwen.AutoClassGen.TestConsole.Classes
 {
 
+
+    [AutoGen("MyClassClone", "Biwen.AutoClassGen.TestConsole.Classes")]
     [AutoGen("MyClass", "Biwen.AutoClassGen.TestConsole.Classes")]
     public interface IMyClass : ITestInterface, ITest2Interface
     {
@@ -10,6 +12,14 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
     }
 
     public partial class MyClass
+    {
+        public string TestMethod(string arg1, int arg2)
+        {
+            return $"{arg1} {arg2}";
+        }
+    }
+
+    public partial class MyClassClone
     {
         public string TestMethod(string arg1, int arg2)
         {

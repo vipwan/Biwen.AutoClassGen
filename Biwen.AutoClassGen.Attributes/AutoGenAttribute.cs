@@ -6,7 +6,7 @@ namespace Biwen.AutoClassGen.Attributes
     /// <summary>
     ///  Indicates that the class should be auto generated.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Interface, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Interface, AllowMultiple = true, Inherited = false)]
     public sealed class AutoGenAttribute : Attribute
     {
         /// <summary>
