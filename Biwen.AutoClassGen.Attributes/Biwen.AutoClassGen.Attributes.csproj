@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<BuildAnalyzerReferences>true</BuildAnalyzerReferences>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<AnalyzerReference Include="..\Biwen.AutoClassGen.Gen\Biwen.AutoClassGen.csproj" />
+	</ItemGroup>
+	
+
+</Project>
