@@ -23,7 +23,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageTags>Biwen.AutoClassGen</PackageTags>
 		<PackageReleaseNotes>Biwen.AutoClassGen</PackageReleaseNotes>
-		<PackageProjectUrl>https://github.com/vipwan/Biwen.QuickApi</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 	</PropertyGroup>
 
 	<!--开发调试阶段-->
