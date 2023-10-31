@@ -6,6 +6,7 @@
 	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	  <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 	  <AnalysisLevel>6.0-all</AnalysisLevel>
+	  <PackageVersion>1.0.0.0</PackageVersion>
   </PropertyGroup>
 
 	<PropertyGroup>
@@ -29,8 +30,8 @@
 	<ItemGroup>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 		<None Include="..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
 

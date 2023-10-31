@@ -1,9 +1,9 @@
-# Biwen.AutoClassGen
-	- ÓÃÓÚÉú³ÉC#ÀàµÄ¹¤¾ß£¬×Ô¶¯Éú³ÉÀàµÄÊôĞÔ,²¢ÇÒÊôĞÔµÄAttributeÈ«²¿À´×ÔInterface
+ï»¿# Biwen.AutoClassGen
+	- ç”¨äºç”ŸæˆC#ç±»çš„å·¥å…·ï¼Œè‡ªåŠ¨ç”Ÿæˆç±»çš„å±æ€§,å¹¶ä¸”å±æ€§çš„Attributeå…¨éƒ¨æ¥è‡ªInterface
 
-## ÓÃ·¨
+## ç”¨æ³•
 
-- 1.ÔÚInterfaceÖĞ¶¨ÒåÊôĞÔ
+- 1.åœ¨Interfaceä¸­å®šä¹‰å±æ€§
 
 ```c#
 
@@ -27,19 +27,19 @@ public interface ITest2Interface
 
 ```
 
-- 2.±ê×¢ĞèÒªÉú³ÉµÄÀà
+- 2.æ ‡æ³¨éœ€è¦ç”Ÿæˆçš„ç±»
 
 ```c#
-    //Ö§³Ö¶à´Î±ê×¢£¬¿ÉÒÔÉú³É¶à¸öÀà
+    //æ”¯æŒå¤šæ¬¡æ ‡æ³¨ï¼Œå¯ä»¥ç”Ÿæˆå¤šä¸ªç±»
     [AutoGen("MyClassClone", "Biwen.AutoClassGen.TestConsole.Classes")]
     [AutoGen("MyClass", "Biwen.AutoClassGen.TestConsole.Classes")]
     public interface IMyClass : ITestInterface, ITest2Interface
     {
     }
 
-    //Èç¹û½Ó¿ÚÖĞÓĞ·½·¨£¬ĞèÒª¶¨ÒåÒ»¸öpartialÀà£¬ÊµÏÖ½Ó¿ÚÖĞµÄ·½·¨
-    //Èç¹û½Ó¿ÚÖĞÃ»ÓĞ·½·¨£¬¿ÉÒÔ²»¶¨ÒåpartialÀà
-    //µ±È»partialÀàºÜÖØÒª,Ò»°ãº¬ÓĞÒµÎñÂß¼­ ¸ù¾İĞèÒª×ÔĞĞ¾ö¶¨
+    //å¦‚æœæ¥å£ä¸­æœ‰æ–¹æ³•ï¼Œéœ€è¦å®šä¹‰ä¸€ä¸ªpartialç±»ï¼Œå®ç°æ¥å£ä¸­çš„æ–¹æ³•
+    //å¦‚æœæ¥å£ä¸­æ²¡æœ‰æ–¹æ³•ï¼Œå¯ä»¥ä¸å®šä¹‰partialç±»
+    //å½“ç„¶partialç±»å¾ˆé‡è¦,ä¸€èˆ¬å«æœ‰ä¸šåŠ¡é€»è¾‘ æ ¹æ®éœ€è¦è‡ªè¡Œå†³å®š
     public partial class MyClass
     {
         public string TestMethod(string arg1, int arg2)
@@ -49,7 +49,7 @@ public interface ITest2Interface
     }
 
 ```
-- 3.Gen×Ô¶¯Éú³ÉÀà
+- 3.Genè‡ªåŠ¨ç”Ÿæˆç±»
 
 ```c#
 
