@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -59,7 +59,7 @@ namespace Biwen.AutoClassGen
             sb.AppendLine("}");
             sb.AppendLine("#pragma warning restore");
 
-            string classTemp = $"public partial class $className : $interfaceName\r\n {{ \r\n $body \r\n }}";
+            string classTemp = $"public partial class $className : $interfaceName {{ $body }}";
 
             foreach (InterfaceDeclarationSyntax node in nodes.AsEnumerable().Cast<InterfaceDeclarationSyntax>())
             {
@@ -132,10 +132,23 @@ namespace Biwen.AutoClassGen
                 source = source.Replace("$namespace", rawNamespace);
                 source = source.Replace("$classes", bodyBuilder.ToString());
                 source = source.Replace("$ni", rootNamespace.Replace("\"", ""));
-
+                //format:
+                source = FormatContent(source);
                 context.AddSource($"Biwen.AutoClassGen.{node.Identifier.Text}.g.cs", SourceText.From(source, Encoding.UTF8));
-
             }
+        }
+
+        /// <summary>
+        /// 格式化代码
+        /// </summary>
+        /// <param name="csCode"></param>
+        /// <returns></returns>
+        private static string FormatContent(string csCode)
+        {
+            var tree = CSharpSyntaxTree.ParseText(csCode);
+            var root = tree.GetRoot().NormalizeWhitespace();
+            var ret = root.ToFullString();
+            return ret;
         }
     }
 }
