@@ -125,9 +125,11 @@ namespace Biwen.AutoClassGen
                                 {
                                     rawAttributes += $"[{attr}]\r\n";
                                 });
+
                                 //prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
                                 //body:
+                                bodyInnerBuilder.AppendLine($"/// <inheritdoc cref=\"{interfaceName}.{prop.Name}\" />");
                                 bodyInnerBuilder.AppendLine($"{rawAttributes}{raw}");
                             });
                         }

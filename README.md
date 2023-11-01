@@ -69,15 +69,18 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
 {
     public partial class MyClass : IMyClass {
 
+    /// <inheritdoc cref="ITestInterface.TestProperty" />
     [System.ComponentModel.DefaultValueAttribute("hello world")]
     [System.ComponentModel.DataAnnotations.RequiredAttribute]
     [System.ComponentModel.DescriptionAttribute("hello world")]
     public string? TestProperty {get;set;}
 
+    /// <inheritdoc cref="ITest2Interface.Hello" />
     [System.ComponentModel.DefaultValueAttribute("hello")]
     [System.ComponentModel.DataAnnotations.RequiredAttribute]
     public string? Hello {get;set;}
 
+    /// <inheritdoc cref="ITest2Interface.World" />
     [System.ComponentModel.DefaultValueAttribute("world")]
     [System.ComponentModel.DataAnnotations.StringLengthAttribute(100, MinimumLength = 2)]
     public string? World {get;set;}

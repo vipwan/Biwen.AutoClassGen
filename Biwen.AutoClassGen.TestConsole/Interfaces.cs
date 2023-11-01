@@ -5,27 +5,24 @@ namespace Biwen.AutoClassGen.TestConsole.Interfaces
 {
 
     /// <summary>
-    /// 测试接口1
+    /// 分页
     /// </summary>
-    public interface ITestInterface
+    public interface IPager
     {
-        [DefaultValue("hello world"),Required]
-        [Description("hello world")]
-        string? TestProperty { get; set; }
+        /// <summary>
+        /// 页码
+        /// </summary>
+        [DefaultValue(0), Description("页码,从0开始")]
+        [Range(0, int.MaxValue)]
+        int? CurrentPage { get; set; }
 
-        string TestMethod(string arg1, int arg2);
-    }
+        /// <summary>
+        /// 分页项数
+        /// </summary>
+        [DefaultValue(10), Description("每页项数,10-20之间")]
+        [Range(10, 20)]
+        int? PageLen { get; set; }
 
-    /// <summary>
-    /// 测试接口2
-    /// </summary>
-    public interface ITest2Interface
-    {
-        [DefaultValue("hello"), Required]
-        string? Hello { get; set; }
 
-        [DefaultValue("world")]
-        [StringLength(100, MinimumLength = 2)]
-        string? World { get; set; }
     }
 }
