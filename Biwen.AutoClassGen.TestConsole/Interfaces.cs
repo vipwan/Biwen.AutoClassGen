@@ -25,4 +25,17 @@ namespace Biwen.AutoClassGen.TestConsole.Interfaces
 
 
     }
+
+    /// <summary>
+    /// 查询
+    /// </summary>
+    public interface IQuery
+    {
+        /// <summary>
+        /// 关键字
+        /// </summary>
+        [Description("KeyWord")]
+        [StringLength(100)]
+        string? KeyWord { get; set; }
+    }
 }

@@ -6,7 +6,7 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
     /// 分页请求
     /// </summary>
     [AutoGen("QueryRequest", "Biwen.AutoClassGen.TestConsole.Classes")]
-    public interface IQueryRequest : IPager
+    public interface IQueryRequest : IPager, IQuery
     {
 
     }
