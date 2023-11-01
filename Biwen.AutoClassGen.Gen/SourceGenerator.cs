@@ -81,7 +81,7 @@ namespace Biwen.AutoClassGen
 
                 IList<AttributeSyntax> attributeSyntaxes = new List<AttributeSyntax>();
 
-                foreach ( var attr in node.AttributeLists.AsEnumerable())
+                foreach (var attr in node.AttributeLists.AsEnumerable())
                 {
                     var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
                     if (attrName == AttributeValueMetadataName)
@@ -102,7 +102,7 @@ namespace Biwen.AutoClassGen
 
                     StringBuilder bodyBuilder = new();
                     IList<string> namespaces = new List<string>();
-                    var body = string.Empty;
+                    StringBuilder bodyInnerBuilder = new();
                     foreach (var baseType in node.BaseList.Types)
                     {
                         var interfaceName = baseType.Type.ToString();
@@ -128,14 +128,14 @@ namespace Biwen.AutoClassGen
                                 //prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
                                 //body:
-                                body += $"{rawAttributes}{raw}\r\n";
+                                bodyInnerBuilder.AppendLine($"{rawAttributes}{raw}");
                             });
                         }
                     }
 
                     var rawClass = classTemp.Replace("$className", className.Replace("\"", ""));
                     rawClass = rawClass.Replace("$interfaceName", node.Identifier.ToString());
-                    rawClass = rawClass.Replace("$body", body);
+                    rawClass = rawClass.Replace("$body", bodyInnerBuilder.ToString());
                     //append:
                     bodyBuilder.AppendLine(rawClass);
 
