@@ -84,8 +84,7 @@ namespace Biwen.AutoClassGen
                 if (node.BaseList == null || !node.BaseList.Types.Any())
                 {
                     var type = compilation.GetSymbolsWithName(node.Identifier.ValueText).AsEnumerable().FirstOrDefault();
-                    var path = type.Locations[0].ToString();
-
+                    //var path = type.Locations[0].ToString();
                     // issue error 
                     context.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, type.Locations[0]));
 
