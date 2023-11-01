@@ -6,7 +6,7 @@
 	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	  <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 	  <AnalysisLevel>6.0-all</AnalysisLevel>
-	  <PackageVersion>1.0.0.0</PackageVersion>
+	  <PackageVersion>1.0.0.1</PackageVersion>
   </PropertyGroup>
 
 	<PropertyGroup>
