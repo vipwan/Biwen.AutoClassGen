@@ -19,8 +19,8 @@ namespace Biwen.AutoClassGen.TestConsole.Interfaces
         /// <summary>
         /// 分页项数
         /// </summary>
-        [DefaultValue(10), Description("每页项数,10-20之间")]
-        [Range(10, 20)]
+        [DefaultValue(10), Description("每页项数,10-30之间")]
+        [Range(10, 30)]
         int? PageLen { get; set; }
 
 

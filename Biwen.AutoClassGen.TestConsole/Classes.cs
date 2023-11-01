@@ -11,4 +11,15 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
 
     }
 
+
+
+    /// <summary>
+    /// 分页请求
+    /// </summary>
+    [AutoGen("QueryRequest2", "Biwen.AutoClassGen.TestConsole.Classes")]
+    public interface IQuery2Request
+    {
+
+    }
+
 }
