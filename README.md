@@ -91,4 +91,4 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
 
 ### 错误码
 
-- GEN001: 标注特性[AutoGen]的接口必须集成至少一个接口
+- GEN001: 标注特性[AutoGen]的接口必须继承至少一个接口
