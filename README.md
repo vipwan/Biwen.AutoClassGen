@@ -52,7 +52,6 @@ public interface ITest2Interface
 #### 3.Gen自动生成类
 
 ```c#
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -61,10 +60,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-#pragma warning disable
 
 using Biwen.AutoClassGen.TestConsole.Interfaces;
 
+#pragma warning disable
 namespace Biwen.AutoClassGen.TestConsole.Classes
 {
     public partial class MyClass : IMyClass {
@@ -88,7 +87,6 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
     }
 }
 #pragma warning restore
-
 ```
 
 ### 错误码
