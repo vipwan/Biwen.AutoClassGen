@@ -1,9 +1,9 @@
 ﻿# Biwen.AutoClassGen
 	- 用于生成C#类的工具，自动生成类的属性,并且属性的Attribute全部来自Interface
 
-## 用法
+### 用法
 
-- 1.在Interface中定义属性
+#### 1.在Interface中定义属性
 
 ```c#
 
@@ -27,7 +27,7 @@ public interface ITest2Interface
 
 ```
 
-- 2.标注需要生成的类
+#### 2.标注需要生成的类
 
 ```c#
     //支持多次标注，可以生成多个类
@@ -49,7 +49,7 @@ public interface ITest2Interface
     }
 
 ```
-- 3.Gen自动生成类
+#### 3.Gen自动生成类
 
 ```c#
 
@@ -90,3 +90,7 @@ namespace Biwen.AutoClassGen.TestConsole.Classes
 #pragma warning restore
 
 ```
+
+### 错误码
+
+- GEN001: 标注特性[AutoGen]的接口必须集成至少一个接口
