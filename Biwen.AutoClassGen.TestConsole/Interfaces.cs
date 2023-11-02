@@ -42,7 +42,7 @@ namespace Biwen.AutoClassGen.TestConsole.Interfaces
     /// <summary>
     /// 多租户请求
     /// </summary>
-    public interface ITenantRequest
+    public interface ITenantRequest : IExtend
     {
         /// <summary>
         /// 租户ID
@@ -50,6 +50,22 @@ namespace Biwen.AutoClassGen.TestConsole.Interfaces
         [Required, Description("租户ID"), DefaultValue("default")]
         [FromHeader(Name = "tenant-id")]
         string? TenantId { get; set; }
+    }
 
+    /// <summary>
+    /// 测试多重继承
+    /// </summary>
+    public interface IExtend : IExtend2
+    {
+        /// <summary>
+        /// 扩展
+        /// </summary>
+        [Description("扩展")]
+        string? Extend { get; set; }
+    }
+
+    public interface IExtend2
+    {
+        string? Extend2 { get; set; }
     }
 }

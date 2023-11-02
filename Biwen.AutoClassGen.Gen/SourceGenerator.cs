@@ -103,9 +103,11 @@ namespace Biwen.AutoClassGen
                     StringBuilder bodyBuilder = new();
                     IList<string> namespaces = new List<string>();
                     StringBuilder bodyInnerBuilder = new();
-                    foreach (var baseType in node.BaseList.Types)
+
+                    //每个接口生成属性
+                    void genProperty(TypeSyntax @interfaceType)
                     {
-                        var interfaceName = baseType.Type.ToString();
+                        var interfaceName = @interfaceType.ToString();
 
                         var symbols = compilation.GetSymbolsWithName(interfaceName);
                         foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
@@ -133,6 +135,28 @@ namespace Biwen.AutoClassGen
                                 bodyInnerBuilder.AppendLine($"{rawAttributes}{raw}");
                             });
                         }
+                    }
+
+                    //获取所有父接口
+                    List<TypeSyntax> allInterface = [];
+                    foreach (var baseType in node.BaseList.Types)
+                    {
+                        allInterface.Add(baseType.Type);
+                        var symbols = compilation.GetSymbolsWithName(baseType.Type.ToString());
+                        var symbol = symbols.FirstOrDefault();
+                        if (symbol.Kind == SymbolKind.NamedType)
+                        {
+                            foreach (var item in (symbol as ITypeSymbol)!.AllInterfaces.AsEnumerable())
+                            {
+                                allInterface.Add(SyntaxFactory.ParseTypeName(item.MetadataName));
+                            }
+                        }
+                    }
+
+                    //所有父接口生成属性:
+                    foreach (var baseType in allInterface)
+                    {
+                        genProperty(baseType);
                     }
 
                     var rawClass = classTemp.Replace("$className", className.Replace("\"", ""));
