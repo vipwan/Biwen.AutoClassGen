@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace Biwen.AutoClassGen.TestConsole.Interfaces
@@ -23,6 +24,32 @@ namespace Biwen.AutoClassGen.TestConsole.Interfaces
         [Range(10, 30)]
         int? PageLen { get; set; }
 
+    }
+
+    /// <summary>
+    /// 查询
+    /// </summary>
+    public interface IQuery
+    {
+        /// <summary>
+        /// 关键字
+        /// </summary>
+        [StringLength(100), Description("查询关键字")]
+        string? KeyWord { get; set; }
+    }
+
+
+    /// <summary>
+    /// 多租户请求
+    /// </summary>
+    public interface ITenantRequest
+    {
+        /// <summary>
+        /// 租户ID
+        /// </summary>
+        [Required, Description("租户ID"), DefaultValue("default")]
+        [FromHeader(Name = "tenant-id")]
+        string? TenantId { get; set; }
 
     }
 }
