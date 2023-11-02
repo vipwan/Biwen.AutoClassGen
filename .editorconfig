@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# GEN001: 没有实现基础接口因此不能生成类
+dotnet_diagnostic.GEN001.severity = error

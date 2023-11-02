@@ -35,20 +35,6 @@ namespace Biwen.AutoClassGen
 
         }
 
-        /// <summary>
-        /// 无法生成类的错误
-        /// </summary>
-#pragma warning disable RS2008 // 启用分析器发布跟踪
-        private static readonly DiagnosticDescriptor InvalidDeclareError = new(id: "GEN001",
-#pragma warning restore RS2008 // 启用分析器发布跟踪
-                                                                              title: "来自Biwen.AutoClassGen的报错信息",
-#pragma warning disable RS1032 // 正确定义诊断消息
-                                                                              messageFormat: "没有实现基础接口因此不能生成类,请删除标注的特性[AutoGen] or 继承相应的接口.",
-#pragma warning restore RS1032 // 正确定义诊断消息
-                                                                              category: typeof(SourceGenerator).Assembly.GetName().Name,
-                                                                              DiagnosticSeverity.Error,
-                                                                              isEnabledByDefault: true);
-
         private static void HandleAnnotatedNodes(Compilation compilation, ImmutableArray<SyntaxNode> nodes, SourceProductionContext context)
         {
             var sb = new StringBuilder();
@@ -77,17 +63,15 @@ namespace Biwen.AutoClassGen
 
             string classTemp = $"public partial class $className : $interfaceName {{ $body }}";
 
-
             foreach (InterfaceDeclarationSyntax node in nodes.AsEnumerable().Cast<InterfaceDeclarationSyntax>())
             {
 
                 if (node.BaseList == null || !node.BaseList.Types.Any())
                 {
-                    var type = compilation.GetSymbolsWithName(node.Identifier.ValueText).AsEnumerable().FirstOrDefault();
-                    //var path = type.Locations[0].ToString();
-                    // issue error 
-                    context.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, type.Locations[0]));
+                    //当前使用分析器SourceGenAnalyzer
 
+                    // issue error 
+                    //context.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, node.GetLocation()));
                     continue;
                 }
 

@@ -11,7 +11,6 @@
     <ProjectReference Include="..\Biwen.AutoClassGen.Attributes\Biwen.AutoClassGen.Attributes.csproj" />
   </ItemGroup>
 
-
 	<ItemGroup>
 		<ProjectReference Include="..\Biwen.AutoClassGen.Gen\Biwen.AutoClassGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
