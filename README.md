@@ -81,7 +81,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
         }
     }
 ```
-#### 3.generated class for you
+#### 3.enjoy!!! auto generated class for you
 
 ```c#
 
