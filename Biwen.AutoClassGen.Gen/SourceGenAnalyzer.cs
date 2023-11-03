@@ -16,11 +16,16 @@ namespace Biwen.AutoClassGen
 
         const string helplink = "https://github.com/vipwan/Biwen.AutoClassGen#gen-error-code";
 
+        public const string GEN001 = "GEN001";
+        public const string GEN011 = "GEN011";
+        public const string GEN021 = "GEN021";
+
+
         /// <summary>
         /// 无法生成类的错误
         /// </summary>
 #pragma warning disable RS2008 // 启用分析器发布跟踪
-        private static readonly DiagnosticDescriptor InvalidDeclareError = new(id: "GEN001",
+        private static readonly DiagnosticDescriptor InvalidDeclareError = new(id: GEN001,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "标注接口没有继承基础接口因此不能生成类",
 #pragma warning disable RS1032 // 正确定义诊断消息
@@ -36,7 +41,7 @@ namespace Biwen.AutoClassGen
         /// 重名错误
         /// </summary>
 #pragma warning disable RS2008 // 启用分析器发布跟踪
-        private static readonly DiagnosticDescriptor InvalidDeclareNameError = new(id: "GEN011",
+        private static readonly DiagnosticDescriptor InvalidDeclareNameError = new(id: GEN011,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "生成类的类名称不可和接口名重名",
 #pragma warning disable RS1032 // 正确定义诊断消息
@@ -47,12 +52,11 @@ namespace Biwen.AutoClassGen
                                                                               helpLinkUri: helplink,
                                                                               isEnabledByDefault: true);
 
-
         /// <summary>
         /// 命名空间规范警告
         /// </summary>
 #pragma warning disable RS2008 // 启用分析器发布跟踪
-        private static readonly DiagnosticDescriptor SuggestDeclareNameWarning = new(id: "GEN021",
+        private static readonly DiagnosticDescriptor SuggestDeclareNameWarning = new(id: GEN021,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "推荐使用相同的命名空间",
 #pragma warning disable RS1032 // 正确定义诊断消息
