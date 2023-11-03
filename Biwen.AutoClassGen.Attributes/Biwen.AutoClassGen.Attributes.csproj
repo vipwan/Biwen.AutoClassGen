@@ -10,7 +10,7 @@
 	  <Description>Biwen.AutoClassGen</Description>
 	  <Copyright>MIT</Copyright>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
-	  <PackageTags>SG</PackageTags>
+	  <PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
 	  <PackageReleaseNotes>SG</PackageReleaseNotes>
   </PropertyGroup>
 
