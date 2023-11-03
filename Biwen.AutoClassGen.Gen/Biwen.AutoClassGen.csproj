@@ -6,7 +6,7 @@
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
-		<PackageVersion>1.0.0.4</PackageVersion>
+		<PackageVersion>1.0.0.5</PackageVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -18,10 +18,10 @@
 		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 		<IsRoslynComponent>true</IsRoslynComponent>
 
-		<Description>Biwen.AutoClassGen, CodeGEN</Description>
+		<Description>Biwen.AutoClassGen,Roslyn,SourceGenerator,QuickApi</Description>
 		<Copyright>MIT</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageTags>Biwen.AutoClassGen</PackageTags>
+		<PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
 		<PackageReleaseNotes>Biwen.AutoClassGen</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 	</PropertyGroup>
