@@ -153,6 +153,8 @@ namespace Biwen.AutoClassGen.Models
 
 ```
 
-## Gen Error Code
+## Report Diagnostic Code
 
 - GEN001: The interface marked [AutoGen] should be inherent one or more interface
+- GEN011: Illegal naming
+- GEN021: It is recommended to use the same namespace name
