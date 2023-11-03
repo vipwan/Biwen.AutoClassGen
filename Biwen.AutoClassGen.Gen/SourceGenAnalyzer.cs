@@ -12,6 +12,7 @@ namespace Biwen.AutoClassGen
     public class SourceGenAnalyzer : DiagnosticAnalyzer
 #pragma warning restore RS1036 // 指定分析器禁止的 API 强制设置
     {
+        #region DiagnosticDescriptors
 
         const string helplink = "https://github.com/vipwan/Biwen.AutoClassGen#gen-error-code";
 
@@ -48,7 +49,7 @@ namespace Biwen.AutoClassGen
 
 
         /// <summary>
-        /// 重名错误
+        /// 命名空间规范警告
         /// </summary>
 #pragma warning disable RS2008 // 启用分析器发布跟踪
         private static readonly DiagnosticDescriptor SuggestDeclareNameWarning = new(id: "GEN021",
@@ -62,6 +63,7 @@ namespace Biwen.AutoClassGen
                                                                               helpLinkUri: helplink,
                                                                               isEnabledByDefault: true);
 
+        #endregion
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
             InvalidDeclareError,
@@ -79,7 +81,7 @@ namespace Biwen.AutoClassGen
             context.RegisterSyntaxNodeAction(ctx =>
             {
                 // Find implicitly typed interface declarations.
-                InterfaceDeclarationSyntax declaration = (InterfaceDeclarationSyntax)ctx.Node;
+                var declaration = (InterfaceDeclarationSyntax)ctx.Node;
 
                 if (declaration == null) return;
                 if (declaration.AttributeLists.Count == 0) return;
@@ -107,17 +109,16 @@ namespace Biwen.AutoClassGen
                             ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
                         }
 
-                        var @namespace = declaration.Parent as NamespaceDeclarationSyntax;
-                        if (@namespace?.Name.ToString() != arg1.GetText().ToString().Replace("\"", ""))
+                        if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
+                        @namespace?.Name.ToString() != arg1.GetText().ToString().Replace("\"", ""))
                         {
                             var location = arg1?.GetLocation();
-                            // issue error
+                            // issue warning
                             ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
                         }
                     }
                 }
             }, SyntaxKind.InterfaceDeclaration);
-
         }
     }
 }
