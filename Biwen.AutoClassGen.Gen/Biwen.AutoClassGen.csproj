@@ -6,7 +6,7 @@
 	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	  <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 	  <AnalysisLevel>6.0-all</AnalysisLevel>
-	  <PackageVersion>1.0.0.0</PackageVersion>
+	  <PackageVersion>1.0.0.3</PackageVersion>
   </PropertyGroup>
 
 	<PropertyGroup>
@@ -28,6 +28,7 @@
 
 	<!--开发调试阶段-->
 	<ItemGroup>
+		<!-- Package the generator in the analyzer directory of the nuget package -->
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 		<None Include="..\README.md">
 		  <Pack>True</Pack>
