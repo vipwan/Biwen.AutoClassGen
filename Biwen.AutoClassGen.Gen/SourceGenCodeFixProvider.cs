@@ -94,6 +94,12 @@ namespace Biwen.AutoClassGen
         private static async Task<Document> ReplaceWithNameOfAsync(Document document, SyntaxNode nodeToReplace,
             string stringText, CancellationToken cancellationToken)
         {
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            if (nodeToReplace is not LiteralExpressionSyntax)
+            {
+                return document.WithSyntaxRoot(root!);
+            }
+
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             var generator = editor.Generator;
 
@@ -108,9 +114,7 @@ namespace Biwen.AutoClassGen
             //    .WithTrailingTrivia(trailingTrivia)
             //    .WithLeadingTrivia(leadingTrivia);
 
-            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var newRoot = root?.ReplaceNode(nodeToReplace, textExpression);
-
             return document.WithSyntaxRoot(newRoot!);
         }
     }

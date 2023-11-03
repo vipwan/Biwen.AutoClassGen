@@ -5,3 +5,7 @@
 
 #### 分析器
 - https://github.com/dotnet/roslyn-sdk/tree/main/samples/CSharp/Analyzers/Analyzers.Implementation/StatelessAnalyzers
+
+
+#### 修复器
+- https://github.com/dotnet/roslyn/blob/main/docs/analyzers/FixAllProvider.md
