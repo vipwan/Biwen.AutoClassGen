@@ -78,8 +78,7 @@ namespace Biwen.AutoClassGen
                 //    x => x.Attributes.Any(x => x.Name.ToFullString() == AttributeValueMetadataName))
                 //    as AttributeListSyntax).Attributes;
 
-                IList<AttributeSyntax> attributeSyntaxes = new List<AttributeSyntax>();
-
+                List<AttributeSyntax> attributeSyntaxes = [];
                 foreach (var attr in node.AttributeLists.AsEnumerable())
                 {
                     var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
@@ -88,7 +87,6 @@ namespace Biwen.AutoClassGen
                         attributeSyntaxes.Add(attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName));
                     }
                 }
-
                 if (attributeSyntaxes.Count == 0)
                 {
                     continue;
@@ -100,7 +98,7 @@ namespace Biwen.AutoClassGen
                     var rootNamespace = attribute.ArgumentList!.Arguments[1].ToString();
 
                     StringBuilder bodyBuilder = new();
-                    IList<string> namespaces = new List<string>();
+                    List<string> namespaces = [];
                     StringBuilder bodyInnerBuilder = new();
 
                     //每个接口生成属性
@@ -162,10 +160,7 @@ namespace Biwen.AutoClassGen
                     bodyBuilder.AppendLine(rawClass);
 
                     string rawNamespace = string.Empty;
-                    namespaces.ToList().ForEach(ns =>
-                    {
-                        rawNamespace += $"using {ns};\r\n";
-                    });
+                    namespaces.ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
 
                     var source = sb.ToString();
                     source = source.Replace("$namespace", rawNamespace);
