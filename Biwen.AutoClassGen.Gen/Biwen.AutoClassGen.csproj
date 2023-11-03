@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-	  <Nullable>enable</Nullable>
-	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-	  <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-	  <AnalysisLevel>6.0-all</AnalysisLevel>
-	  <PackageVersion>1.0.0.3</PackageVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<AnalysisLevel>6.0-all</AnalysisLevel>
+		<PackageVersion>1.0.0.4</PackageVersion>
+	</PropertyGroup>
 
 	<PropertyGroup>
 		<AnalyzerLanguage>cs</AnalyzerLanguage>
@@ -31,8 +31,8 @@
 		<!-- Package the generator in the analyzer directory of the nuget package -->
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 		<None Include="..\README.md">
-		  <Pack>True</Pack>
-		  <PackagePath>\</PackagePath>
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
 
@@ -40,5 +40,5 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0-2.final" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0-2.final" PrivateAssets="all" />
 	</ItemGroup>
-	
+
 </Project>
