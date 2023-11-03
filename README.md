@@ -53,7 +53,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
         string? TenantId { get; set; }
     }
 ```
-#### 2.impl interface and add AutoGen Attribute
+#### 2.Inherent interface and mark [AutoGen] Attribute
 
 ```c#
 
@@ -81,7 +81,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
         }
     }
 ```
-#### 3.enjoy!!! auto generated class for you
+#### 3.Enjoy!!! finally auto generated class for you
 
 ```c#
 
