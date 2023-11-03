@@ -1,63 +1,61 @@
 ﻿## Biwen.AutoClassGen
-Usage scenario: In many cases, we will have a lot of request objects, 
-such as GetIdRequest, GetUserRequest, etc..., and these requests may have a large number of the same fields.
-For example, the multi-tenant Id, the number of pages, and these attribute fields may have validation rules, binding rules, and Swagger descriptions.
-If all this code needs to be written, it will add a lot of work, so Biwen.AutoClassGen came into being to solve this pain point...
+使用场景:很多时候我们的请求对象会特别多比如GetIdRequest,GetUserRequest etc...,这些Request可能大量存在相同的字段,
+比如多租户Id,分页数,这些属性字段可能又存在验证规则,绑定规则,以及Swagger描述等信息,
+如果这些代码都需要人肉敲那会增加很多工作量,所以Biwen.AutoClassGen应运而生,解决这个痛点...
+- 用于生成C#类的工具，自动生成类的属性,并且属性的Attribute全部来自Interface
 
-[中文](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
+### 用法
 
-### Useage
-
-#### 1.Define Interface
+#### 1.在Interface中定义属性
 
 ```c#
     /// <summary>
-    /// Pager Interface
+    /// 分页
     /// </summary>
     public interface IPager
     {
         /// <summary>
-        /// current page
+        /// 页码
         /// </summary>
-        [DefaultValue(0), Description("start 0 to int.max")]
+        [DefaultValue(0), Description("页码,从0开始")]
         [Range(0, int.MaxValue)]
         int? CurrentPage { get; set; }
         /// <summary>
-        /// length of page 
+        /// 分页项数
         /// </summary>
-        [DefaultValue(10), Description("between 10 an 30")]
+        [DefaultValue(10), Description("每页项数,10-30之间")]
         [Range(10, 30)]
         int? PageLen { get; set; }
     }
     /// <summary>
-    /// Query Interface
+    /// 查询
     /// </summary>
     public interface IQuery
     {
         /// <summary>
-        /// KeyWord
+        /// 关键字
         /// </summary>
-        [StringLength(100), Description("Keyword for search")]
+        [StringLength(100), Description("查询关键字")]
         string? KeyWord { get; set; }
     }
     /// <summary>
-    /// Tenant Request
+    /// 多租户请求
     /// </summary>
     public interface ITenantRequest
     {
         /// <summary>
-        /// TenantId
+        /// 租户ID
         /// </summary>
-        [Required, Description("Tenant ID"), DefaultValue("default")]
+        [Required, Description("租户ID"), DefaultValue("default")]
         [FromHeader(Name = "tenant-id")]
         string? TenantId { get; set; }
     }
 ```
-#### 2.impl interface and add AutoGen Attribute
+#### 2.标注需要生成的类
 
 ```c#
 
-    //can add multi AutoGen Attribute
+    //支持多次标注，可以生成多个类
     [AutoGen("QueryRequest", "Biwen.AutoClassGen.Models")]
     [AutoGen("Query2Request", "Biwen.AutoClassGen.Models")]
     public interface IQueryRequest : IPager, IQuery
@@ -65,14 +63,16 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
     }
 
     /// <summary>
-    /// MyTenantRequest
+    /// 多租户请求
     /// </summary>
     [AutoGen("MyTenantRequest", "Biwen.AutoClassGen.Models")]
     public interface ITenantRealRequest : ITenantRequest
     {
     }
 
-    //partial class for your logic
+    //如果接口中有方法，需要定义一个partial类，实现接口中的方法
+    //如果接口中没有方法，可以不定义partial类
+    //当然partial类很重要,一般含有业务逻辑 根据需要自行决定
     public partial class QueryRequest
     {
         public string TestMethod(string arg1, int arg2)
@@ -81,7 +81,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
         }
     }
 ```
-#### 3.generated class for you
+#### 3.Gen自动生成类
 
 ```c#
 
@@ -100,19 +100,19 @@ namespace Biwen.AutoClassGen.Models
     {
         /// <inheritdoc cref = "IPager.CurrentPage"/>
         [System.ComponentModel.DefaultValueAttribute(0)]
-        [System.ComponentModel.DescriptionAttribute("start 0 to int.max")]
+        [System.ComponentModel.DescriptionAttribute("页码,从0开始")]
         [System.ComponentModel.DataAnnotations.RangeAttribute(0, 2147483647)]
         public int? CurrentPage { get; set; }
 
         /// <inheritdoc cref = "IPager.PageLen"/>
         [System.ComponentModel.DefaultValueAttribute(10)]
-        [System.ComponentModel.DescriptionAttribute("between 10 an 30")]
+        [System.ComponentModel.DescriptionAttribute("每页项数,10-30之间")]
         [System.ComponentModel.DataAnnotations.RangeAttribute(10, 30)]
         public int? PageLen { get; set; }
 
         /// <inheritdoc cref = "IQuery.KeyWord"/>
         [System.ComponentModel.DataAnnotations.StringLengthAttribute(100)]
-        [System.ComponentModel.DescriptionAttribute("Keyword for search")]
+        [System.ComponentModel.DescriptionAttribute("查询关键字")]
         public string? KeyWord { get; set; }
     }
 
@@ -120,19 +120,19 @@ namespace Biwen.AutoClassGen.Models
     {
         /// <inheritdoc cref = "IPager.CurrentPage"/>
         [System.ComponentModel.DefaultValueAttribute(0)]
-        [System.ComponentModel.DescriptionAttribute("start 0 to int.max")]
+        [System.ComponentModel.DescriptionAttribute("页码,从0开始")]
         [System.ComponentModel.DataAnnotations.RangeAttribute(0, 2147483647)]
         public int? CurrentPage { get; set; }
 
         /// <inheritdoc cref = "IPager.PageLen"/>
         [System.ComponentModel.DefaultValueAttribute(10)]
-        [System.ComponentModel.DescriptionAttribute("between 10 an 30")]
+        [System.ComponentModel.DescriptionAttribute("每页项数,10-30之间")]
         [System.ComponentModel.DataAnnotations.RangeAttribute(10, 30)]
         public int? PageLen { get; set; }
 
         /// <inheritdoc cref = "IQuery.KeyWord"/>
         [System.ComponentModel.DataAnnotations.StringLengthAttribute(100)]
-        [System.ComponentModel.DescriptionAttribute("Keyword for search")]
+        [System.ComponentModel.DescriptionAttribute("查询关键字")]
         public string? KeyWord { get; set; }
     }
 
@@ -140,7 +140,7 @@ namespace Biwen.AutoClassGen.Models
     {
         /// <inheritdoc cref = "ITenantRequest.TenantId"/>
         [System.ComponentModel.DataAnnotations.RequiredAttribute]
-        [System.ComponentModel.DescriptionAttribute("Tenant ID")]
+        [System.ComponentModel.DescriptionAttribute("租户ID")]
         [System.ComponentModel.DefaultValueAttribute("default")]
         [Microsoft.AspNetCore.Mvc.FromHeaderAttribute(Name = "tenant-id")]
         public string? TenantId { get; set; }
@@ -150,6 +150,6 @@ namespace Biwen.AutoClassGen.Models
 
 ```
 
-### Gen Error Code
+### 错误码
 
-- GEN001: The interface marked [AutoGen] should be inherent one or more interface
+- GEN001: 标注特性[AutoGen]的接口必须继承至少一个接口
