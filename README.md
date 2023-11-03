@@ -1,14 +1,15 @@
-﻿## Biwen.AutoClassGen
-Usage scenario: In many cases, we will have a lot of request objects, 
+﻿# Biwen.AutoClassGen
+
+Usage scenario: In many cases, we will have a lot of request objects,
 such as GetIdRequest, GetUserRequest, etc..., and these requests may have a large number of the same fields.
 For example, the multi-tenant Id, the number of pages, and these attribute fields may have validation rules, binding rules, and Swagger descriptions.
 If all this code needs to be written, it will add a lot of work, so Biwen.AutoClassGen came into being to solve this pain point...
 
 [中文](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
 
-### Useage
+## Useage
 
-#### 1.Define Interface
+### 1.Define Interface
 
 ```c#
     /// <summary>
@@ -53,7 +54,8 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
         string? TenantId { get; set; }
     }
 ```
-#### 2.Inherent interface and mark [AutoGen] Attribute
+
+### 2.Inherent interface and mark [AutoGen] Attribute
 
 ```c#
 
@@ -81,7 +83,8 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
         }
     }
 ```
-#### 3.Enjoy!!! finally auto generated class for you
+
+### 3.Enjoy!!! finally auto generated class for you
 
 ```c#
 
@@ -150,6 +153,6 @@ namespace Biwen.AutoClassGen.Models
 
 ```
 
-### Gen Error Code
+## Gen Error Code
 
 - GEN001: The interface marked [AutoGen] should be inherent one or more interface
