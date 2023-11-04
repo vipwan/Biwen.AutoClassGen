@@ -10,7 +10,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 
 - Gen DTO class for your API
 
-[Gen DTO Usage](https://github.com/vipwan/Biwen.AutoClassGen/issues/4)
+- [Gen DTO Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/issues/4)
 
 
 [中文](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
