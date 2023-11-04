@@ -11,10 +11,7 @@ namespace Biwen.AutoClassGen.Models
     {
     }
 
-    /// <summary>
-    /// 多租户请求
-    /// </summary>
-    [AutoGen("TenantRealRequest", "Biwen.AutoClassGen.Models")]
+
     public interface ITenantRealRequest : ITenantRequest
     {
 

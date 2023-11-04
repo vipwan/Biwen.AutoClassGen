@@ -19,6 +19,7 @@ namespace Biwen.AutoClassGen
         public const string GEN001 = "GEN001";
         public const string GEN011 = "GEN011";
         public const string GEN021 = "GEN021";
+        public const string GEN031 = "GEN031";//推荐生成
 
 
         /// <summary>
@@ -67,12 +68,30 @@ namespace Biwen.AutoClassGen
                                                                               helpLinkUri: helplink,
                                                                               isEnabledByDefault: true);
 
+
+        /// <summary>
+        /// 推荐使用自动生成
+        /// </summary>
+#pragma warning disable RS2008 // 启用分析器发布跟踪
+        private static readonly DiagnosticDescriptor SuggestAutoGen = new(id: GEN031,
+#pragma warning restore RS2008 // 启用分析器发布跟踪
+                                                                              title: "使用[AutoGen]自动生成",
+#pragma warning disable RS1032 // 正确定义诊断消息
+                                                                              messageFormat: "使用[AutoGen]自动生成.",
+#pragma warning restore RS1032 // 正确定义诊断消息
+                                                                              category: typeof(SourceGenerator).Assembly.GetName().Name,
+                                                                              DiagnosticSeverity.Info,
+                                                                              helpLinkUri: helplink,
+                                                                              isEnabledByDefault: true);
+
+
         #endregion
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
             InvalidDeclareError,
             InvalidDeclareNameError,
-            SuggestDeclareNameWarning
+            SuggestDeclareNameWarning,
+            SuggestAutoGen
             );
 
         const string AttributeValueMetadataName = "AutoGen";
@@ -86,40 +105,53 @@ namespace Biwen.AutoClassGen
             {
                 // Find implicitly typed interface declarations.
                 var declaration = (InterfaceDeclarationSyntax)ctx.Node;
-
                 if (declaration == null) return;
-                if (declaration.AttributeLists.Count == 0) return;
 
-                foreach (var attr in declaration.AttributeLists.AsEnumerable())
+                if (declaration.AttributeLists.Count > 0)
                 {
-                    if (attr.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName))
+                    foreach (var attr in declaration.AttributeLists.AsEnumerable())
                     {
-                        if (declaration.BaseList == null || !declaration.BaseList.Types.Any())
+                        if (attr.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName))
                         {
-                            // issue error
-                            ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, attr.GetLocation()));
+                            if (declaration.BaseList == null || !declaration.BaseList.Types.Any())
+                            {
+                                // issue error
+                                ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, attr.GetLocation()));
+                            }
+
+                            var arg0 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
+                            .ArgumentList!.Arguments[0];
+
+                            var arg1 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
+                            .ArgumentList!.Arguments[1];
+
+                            if (declaration.Identifier.Text == arg0.GetText().ToString().Replace("\"", ""))
+                            {
+                                var location = arg0?.GetLocation();
+                                // issue error
+                                ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
+                            }
+
+                            if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
+                            @namespace?.Name.ToString() != arg1.GetText().ToString().Replace("\"", ""))
+                            {
+                                var location = arg1?.GetLocation();
+                                // issue warning
+                                ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
+                            }
                         }
+                    }
+                }
 
-                        var arg0 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
-                        .ArgumentList!.Arguments[0];
-
-                        var arg1 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
-                        .ArgumentList!.Arguments[1];
-
-                        if (declaration.Identifier.Text == arg0.GetText().ToString().Replace("\"", ""))
-                        {
-                            var location = arg0?.GetLocation();
-                            // issue error
-                            ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
-                        }
-
-                        if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
-                        @namespace?.Name.ToString() != arg1.GetText().ToString().Replace("\"", ""))
-                        {
-                            var location = arg1?.GetLocation();
-                            // issue warning
-                            ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
-                        }
+                //suggest
+                if (declaration.BaseList != null && declaration.BaseList.Types.Any(x => x.IsKind(SyntaxKind.SimpleBaseType)))
+                {
+                    var haveAttr = declaration.AttributeLists.Any(x => x.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName));
+                    if (!haveAttr)
+                    {
+                        var location = declaration.GetLocation();
+                        // issue suggest
+                        ctx.ReportDiagnostic(Diagnostic.Create(SuggestAutoGen, location));
                     }
                 }
             }, SyntaxKind.InterfaceDeclaration);

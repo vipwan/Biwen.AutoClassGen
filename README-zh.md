@@ -153,3 +153,6 @@ namespace Biwen.AutoClassGen.Models
 ### 错误码
 
 - GEN001: 标注特性[AutoGen]的接口必须继承至少一个接口
+- GEN011: 非法的类命名
+- GEN021: 警告没有使用相同的命名空间
+- GEN031: 建议标注特性[AutoGen]以便生成类

@@ -158,3 +158,4 @@ namespace Biwen.AutoClassGen.Models
 - GEN001: The interface marked [AutoGen] should be inherent one or more interface
 - GEN011: Illegal naming
 - GEN021: It is recommended to use the same namespace name
+- GEN031: Suggestions to use [AutoGen] attribute to mark the interface
