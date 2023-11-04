@@ -21,7 +21,6 @@ namespace Biwen.AutoClassGen
         public const string GEN021 = "GEN021";
         public const string GEN031 = "GEN031";//推荐生成
 
-
         /// <summary>
         /// 无法生成类的错误
         /// </summary>
@@ -29,9 +28,7 @@ namespace Biwen.AutoClassGen
         private static readonly DiagnosticDescriptor InvalidDeclareError = new(id: GEN001,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "标注接口没有继承基础接口因此不能生成类",
-#pragma warning disable RS1032 // 正确定义诊断消息
-                                                                              messageFormat: "没有实现基础接口因此不能生成类,请删除标注的特性[AutoGen] or 继承相应的接口.",
-#pragma warning restore RS1032 // 正确定义诊断消息
+                                                                              messageFormat: "没有实现基础接口因此不能生成类,请删除标注的特性[AutoGen] or 继承相应的接口",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Error,
                                                                               helpLinkUri: helplink,
@@ -45,9 +42,7 @@ namespace Biwen.AutoClassGen
         private static readonly DiagnosticDescriptor InvalidDeclareNameError = new(id: GEN011,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "生成类的类名称不可和接口名重名",
-#pragma warning disable RS1032 // 正确定义诊断消息
-                                                                              messageFormat: "生成类的类名称不可和接口名重名.",
-#pragma warning restore RS1032 // 正确定义诊断消息
+                                                                              messageFormat: "生成类的类名称不可和接口名重名",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Error,
                                                                               helpLinkUri: helplink,
@@ -60,9 +55,7 @@ namespace Biwen.AutoClassGen
         private static readonly DiagnosticDescriptor SuggestDeclareNameWarning = new(id: GEN021,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "推荐使用相同的命名空间",
-#pragma warning disable RS1032 // 正确定义诊断消息
-                                                                              messageFormat: "推荐使用相同的命名空间.",
-#pragma warning restore RS1032 // 正确定义诊断消息
+                                                                              messageFormat: "推荐使用相同的命名空间",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Warning,
                                                                               helpLinkUri: helplink,
@@ -76,9 +69,7 @@ namespace Biwen.AutoClassGen
         private static readonly DiagnosticDescriptor SuggestAutoGen = new(id: GEN031,
 #pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "使用[AutoGen]自动生成",
-#pragma warning disable RS1032 // 正确定义诊断消息
-                                                                              messageFormat: "使用[AutoGen]自动生成.",
-#pragma warning restore RS1032 // 正确定义诊断消息
+                                                                              messageFormat: "使用[AutoGen]自动生成",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Info,
                                                                               helpLinkUri: helplink,
