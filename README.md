@@ -7,7 +7,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 
 [中文](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
 
-## Useage
+## Usage
 
 ### 1.Define unit Interface
 
