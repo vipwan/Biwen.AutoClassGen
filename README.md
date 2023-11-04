@@ -9,7 +9,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 
 ## Useage
 
-### 1.Define Interface
+### 1.Define unit Interface
 
 ```c#
     /// <summary>
@@ -55,7 +55,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
     }
 ```
 
-### 2.Inherent interface and mark [AutoGen] Attribute
+### 2.Inherent unit interfaces and mark [AutoGen] Attribute
 
 ```c#
 
