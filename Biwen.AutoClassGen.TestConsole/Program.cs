@@ -11,7 +11,15 @@ Biwen.AutoClassGen.Models.QueryRequest queryRequest = new()
     KeyWord = "biwen"
 };
 
-Console.WriteLine($"{queryRequest.KeyWord}");
+Biwen.AutoClassGen.TestConsole.Dtos.UserDto userDto = new()
+{
+    FirstName = "biwen",
+    LastName = "wan",
+    Age = 18,
+};
 
+
+Console.WriteLine($"{queryRequest.KeyWord}");
+Console.WriteLine($"I`m {userDto.FirstName} {userDto.LastName} I`m {userDto.Age} years old");
 
 Console.ReadLine();
