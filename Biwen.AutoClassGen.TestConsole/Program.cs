@@ -33,7 +33,8 @@ var user = new User
 
 //mapper to UserDto
 var userDto = user.MapperToUserDto();
-
+//mapper to User2Dto
+var user2Dto = user.MapperToUser2Dto();
 
 Console.WriteLine($"{queryRequest.KeyWord}");
 Console.WriteLine($"I`m {userDto.FirstName} {userDto.LastName} I`m {userDto.Age} years old");
