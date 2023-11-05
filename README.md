@@ -9,6 +9,10 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 
 ### Usage
 
+```bash
+dotnet add package Biwen.AutoClassGen.Attributes
+```
+
 - [Gen DTO Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Dto.md)
 - [Gen Request Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-request.md)
 
