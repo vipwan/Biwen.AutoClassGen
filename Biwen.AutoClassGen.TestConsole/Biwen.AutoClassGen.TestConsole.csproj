@@ -14,10 +14,5 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Biwen.AutoClassGen.Gen\Biwen.AutoClassGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
-
-	<PropertyGroup>
-		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-		<CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GX</CompilerGeneratedFilesOutputPath>
-	</PropertyGroup>
-
+	
 </Project>
