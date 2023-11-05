@@ -301,6 +301,9 @@ namespace Biwen.AutoClassGen
                     List<string> namespaces = [];
                     StringBuilder bodyInnerBuilder = new();
 
+                    StringBuilder mapperBodyBuilder = new();
+
+
                     //生成属性
                     void genProperty(TypeSyntax @type)
                     {
@@ -322,6 +325,9 @@ namespace Biwen.AutoClassGen
                                     //body:
                                     bodyInnerBuilder.AppendLine($"/// <inheritdoc cref=\"{@type}.{prop.Name}\" />");
                                     bodyInnerBuilder.AppendLine($"{raw}");
+
+                                    //mapper:
+                                    mapperBodyBuilder.AppendLine($"{prop.Name} = model.{prop.Name},");
                                 }
                             });
                         }
@@ -354,10 +360,53 @@ namespace Biwen.AutoClassGen
                     source = source.Replace("$ni", rootNamespace);
                     //format:
                     source = FormatContent(source);
+
+
+                    //生成Mapper
+                    var mapperSource = MapperTemplate.Replace("$namespace", namespaces.First());
+                    mapperSource = mapperSource.Replace("$ns", rootNamespace);
+                    mapperSource = mapperSource.Replace("$baseclass", entityName);
+                    mapperSource = mapperSource.Replace("$dtoclass", className);
+                    mapperSource = mapperSource.Replace("$body", mapperBodyBuilder.ToString());
+
+
+                    mapperSource = FormatContent(mapperSource);
+
+                    //合并
+                    source = source + Environment.NewLine + mapperSource;
+
                     context.AddSource($"Biwen.AutoClassGenDto.{className}.{node.Identifier.Text}.g.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }
         }
+
+
+        #region Template
+
+        public static readonly string MapperTemplate = $@"
+#pragma warning disable
+namespace $namespace
+{{
+    using $ns ;
+    public static partial class $baseclassTo$dtoclassExtentions
+    {{
+        /// <summary>
+        /// mapper to $dtoclass
+        /// </summary>
+        /// <returns></returns>
+        public static $dtoclass MapperToDto(this $baseclass model)
+        {{
+            return new $dtoclass()
+            {{
+                $body
+            }};
+        }}
+    }}
+}}
+#pragma warning restore
+";
+
+        #endregion
 
         /// <summary>
         /// 格式化代码
