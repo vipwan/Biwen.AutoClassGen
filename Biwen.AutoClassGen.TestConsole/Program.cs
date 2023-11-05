@@ -12,6 +12,8 @@ Biwen.AutoClassGen.Models.QueryRequest queryRequest = new()
     KeyWord = "biwen"
 };
 
+
+
 Biwen.AutoClassGen.TestConsole.Dtos.UserDto userDto2 = new()
 {
     FirstName = "biwen",

@@ -53,14 +53,20 @@ namespace Biwen.AutoClassGen
                     //var @namespace = root.Parent?.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().First().Name.ToString();
 
                     var rootCompUnit = (CompilationUnitSyntax)root;
-                    var @namespace = ((rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.NamespaceDeclaration)).Single()) as NamespaceDeclarationSyntax)?.Name.ToString();
-
-                    // Register a code action that will invoke the fix.
-                    CodeAction action = CodeAction.Create(
-                        "GEN:使用推荐的命名空间",
-                        c => ReplaceWithNameOfAsync(context.Document, nodeToReplace, @namespace!, c),
-                        equivalenceKey: nameof(SourceGenCodeFixProvider));
-                    context.RegisterCodeFix(action, diagnostic);
+                    var @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.NamespaceDeclaration)).FirstOrDefault() as NamespaceDeclarationSyntax)?.Name.ToString();
+                    if (string.IsNullOrEmpty(@namespace))
+                    {
+                         @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault() as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
+                    }
+                    if (!string.IsNullOrEmpty(@namespace))
+                    {
+                        // Register a code action that will invoke the fix.
+                        CodeAction action = CodeAction.Create(
+                            "GEN:使用推荐的命名空间",
+                            c => ReplaceWithNameOfAsync(context.Document, nodeToReplace, @namespace!, c),
+                            equivalenceKey: nameof(SourceGenCodeFixProvider));
+                        context.RegisterCodeFix(action, diagnostic);
+                    }
                 }
                 else if (diagnostic.Id == SourceGenAnalyzer.GEN011)
                 {
@@ -159,7 +165,12 @@ namespace Biwen.AutoClassGen
             var rootCompUnit = (CompilationUnitSyntax)root!;
             //命名空间
             var @namespace = ((rootCompUnit.Members.Where(
-                m => m.IsKind(SyntaxKind.NamespaceDeclaration)).Single()) as NamespaceDeclarationSyntax)?.Name.ToString();
+                m => m.IsKind(SyntaxKind.NamespaceDeclaration)).FirstOrDefault()) as NamespaceDeclarationSyntax)?.Name.ToString();
+            if (string.IsNullOrEmpty(@namespace))
+            {
+                @namespace = ((rootCompUnit.Members.Where(
+                m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault()) as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
+            }
             //类名
             var @class = "YourClassName";
 

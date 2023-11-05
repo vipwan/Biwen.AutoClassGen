@@ -7,7 +7,7 @@
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
 		<Authors>万雅虎</Authors>
-		<PackageVersion>1.1.0.0</PackageVersion>
+		<PackageVersion>1.1.0.1</PackageVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -23,7 +23,7 @@
 		<Copyright>MIT</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
-		<PackageReleaseNotes>提供对DTO的Gen支持</PackageReleaseNotes>
+		<PackageReleaseNotes>提供对DTO的Gen支持,提供简单的Mapper</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 	</PropertyGroup>
 

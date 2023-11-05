@@ -123,8 +123,17 @@ namespace Biwen.AutoClassGen
                                 ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
                             }
 
+                            //NamespaceDeclarationSyntax
                             if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
-                            @namespace?.Name.ToString() != arg1.GetText().ToString().Replace("\"", ""))
+                            @namespace?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
+                            {
+                                var location = arg1?.GetLocation();
+                                // issue warning
+                                ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
+                            }
+                            //FileScopedNamespaceDeclaration
+                            if (declaration.Parent is FileScopedNamespaceDeclarationSyntax @namespace2 &&
+                            @namespace2?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
                             {
                                 var location = arg1?.GetLocation();
                                 // issue warning
