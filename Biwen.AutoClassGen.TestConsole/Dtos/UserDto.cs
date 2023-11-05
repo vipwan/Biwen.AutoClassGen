@@ -1,6 +1,5 @@
 ﻿using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
-using System.Runtime.CompilerServices;
 
 
 #pragma warning disable
@@ -12,6 +11,14 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
     /// </summary>
     [AutoDto(typeof(User), nameof(User.Id), "TestCol")]
     public partial class UserDto
+    {
+    }
+
+    /// <summary>
+    /// to be generated more than one
+    /// </summary>
+    [AutoDto(typeof(User), nameof(User.Email))]
+    public partial class User2Dto
     {
     }
 }

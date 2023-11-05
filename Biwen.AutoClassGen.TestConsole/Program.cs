@@ -32,7 +32,7 @@ var user = new User
 };
 
 //mapper to UserDto
-var userDto = user.MapperToDto();
+var userDto = user.MapperToUserDto();
 
 
 Console.WriteLine($"{queryRequest.KeyWord}");
