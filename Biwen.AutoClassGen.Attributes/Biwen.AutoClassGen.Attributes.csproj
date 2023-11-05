@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	  <TargetFramework>netstandard2.0</TargetFramework>
-	  <PackageVersion>1.1.0.0</PackageVersion>
+	  <PackageVersion>1.1.0.2</PackageVersion>
 	  <PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 	  <Authors>万雅虎</Authors>
 	  <RepositoryUrl>https://github.com/vipwan/Biwen.AutoClassGen</RepositoryUrl>
@@ -14,20 +14,16 @@
 	  <PackageReleaseNotes>SG</PackageReleaseNotes>
   </PropertyGroup>
 
-	<PropertyGroup>
-		<BuildAnalyzerReferences>true</BuildAnalyzerReferences>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<AnalyzerReference Include="..\Biwen.AutoClassGen.Gen\Biwen.AutoClassGen.csproj" />
-	</ItemGroup>
-
 	<ItemGroup>
 	  <None Include="..\.editorconfig" Link=".editorconfig" />
 	  <None Include="..\README.md">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <PackageReference Include="Biwen.AutoClassGen" Version="1.1.0.2" PrivateAssets="contentfiles;analyzers" />
 	</ItemGroup>
 	
 
