@@ -7,7 +7,7 @@
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
 		<Authors>万雅虎</Authors>
-		<PackageVersion>1.1.0.1</PackageVersion>
+		<PackageVersion>1.1.0.2</PackageVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
