@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "SourceGenerator": {
+    "Gen": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "..\\Biwen.AutoClassGen.TestConsole\\Biwen.AutoClassGen.TestConsole.csproj"
     }
