@@ -1,30 +1,28 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="SourceGenerator.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Biwen.AutoClassGen
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.Immutable;
+    using System.Linq;
+    using System.Text;
+    using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Microsoft.CodeAnalysis.Text;
 
     [Generator(LanguageNames.CSharp)]
-#pragma warning disable RS1036 // 指定分析器禁止的 API 强制设置
     public class SourceGenerator : IIncrementalGenerator
-#pragma warning restore RS1036 // 指定分析器禁止的 API 强制设置
     {
 
-        const string AttributeMetadataName = "Biwen.AutoClassGen.Attributes.AutoGenAttribute";
-        const string AttributeValueMetadataName = "AutoGen";
+        private const string AttributeMetadataName = "Biwen.AutoClassGen.Attributes.AutoGenAttribute";
+        private const string AttributeValueMetadataName = "AutoGen";
 
-        const string AttributeMetadataName_Dto = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute";
-        const string AttributeValueMetadataName_Dto = "AutoDto";
-
-
-
+        private const string AttributeMetadataNameDto = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute";
+        private const string AttributeValueMetadataNameDto = "AutoDto";
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
 
@@ -47,7 +45,7 @@ namespace Biwen.AutoClassGen
             #region AutoDtoAttribute
 
             var nodesDto = context.SyntaxProvider.ForAttributeWithMetadataName(
-                AttributeMetadataName_Dto,
+                AttributeMetadataNameDto,
                 (context, attributeSyntax) => true,
                 (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
@@ -98,14 +96,14 @@ namespace Biwen.AutoClassGen
 
                 if (node.BaseList == null || !node.BaseList.Types.Any())
                 {
-                    //当前使用分析器SourceGenAnalyzer
+                    // 当前使用分析器SourceGenAnalyzer
 
-                    // issue error 
-                    //context.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, node.GetLocation()));
+                    // issue error
+                    // context.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, node.GetLocation()));
                     continue;
                 }
 
-                //var attributes = (node.AttributeLists.AsEnumerable().First(
+                // var attributes = (node.AttributeLists.AsEnumerable().First(
                 //    x => x.Attributes.Any(x => x.Name.ToFullString() == AttributeValueMetadataName))
                 //    as AttributeListSyntax).Attributes;
 
@@ -132,8 +130,8 @@ namespace Biwen.AutoClassGen
                     List<string> namespaces = [];
                     StringBuilder bodyInnerBuilder = new();
 
-                    //每个接口生成属性
-                    void genProperty(TypeSyntax @interfaceType)
+                    // 每个接口生成属性
+                    void GenProperty(TypeSyntax @interfaceType)
                     {
                         var interfaceName = @interfaceType.ToString();
 
@@ -165,7 +163,7 @@ namespace Biwen.AutoClassGen
                         }
                     }
 
-                    //获取所有父接口
+                    // 获取所有父接口
                     List<TypeSyntax> allInterface = [];
                     foreach (var baseType in node.BaseList.Types)
                     {
@@ -181,13 +179,13 @@ namespace Biwen.AutoClassGen
                         }
                     }
 
-                    //所有父接口生成属性:
-                    allInterface.ForEach(genProperty);
+                    // 所有父接口生成属性:
+                    allInterface.ForEach(GenProperty);
 
                     var rawClass = classTemp.Replace("$className", className.Replace("\"", ""));
                     rawClass = rawClass.Replace("$interfaceName", node.Identifier.ToString());
                     rawClass = rawClass.Replace("$body", bodyInnerBuilder.ToString());
-                    //append:
+                    // append:
                     bodyBuilder.AppendLine(rawClass);
 
                     string rawNamespace = string.Empty;
@@ -197,7 +195,7 @@ namespace Biwen.AutoClassGen
                     source = source.Replace("$namespace", rawNamespace);
                     source = source.Replace("$classes", bodyBuilder.ToString());
                     source = source.Replace("$ni", rootNamespace.Replace("\"", ""));
-                    //format:
+                    // format:
                     source = FormatContent(source);
                     context.AddSource($"Biwen.AutoClassGen.{className.Replace("\"", "")}.{node.Identifier.Text}.g.cs", SourceText.From(source, Encoding.UTF8));
 
@@ -234,9 +232,9 @@ namespace Biwen.AutoClassGen
                 foreach (var attr in node.AttributeLists.AsEnumerable())
                 {
                     var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                    if (attrName == AttributeValueMetadataName_Dto)
+                    if (attrName == AttributeValueMetadataNameDto)
                     {
-                        attributeSyntax = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName_Dto);
+                        attributeSyntax = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataNameDto);
                         break;
                     }
                 }
@@ -275,24 +273,24 @@ namespace Biwen.AutoClassGen
                 sb.AppendLine("$namespace");
                 sb.AppendLine("$classes");
                 sb.AppendLine("}");
-                //sb.AppendLine("#pragma warning restore");
+                // sb.AppendLine("#pragma warning restore");
                 string classTemp = $"partial class $className  {{ $body }}";
 
                 {
-                    //排除的属性
-                    List<string> Excapes = [];
+                    // 排除的属性
+                    List<string> excapes = [];
                     for (var i = 1; i < attributeSyntax.ArgumentList.Arguments.Count; i++)
                     {
                         var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
                         if (expressionSyntax.IsKind(SyntaxKind.InvocationExpression))
                         {
                             var name = (expressionSyntax as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
-                            Excapes.Add(name.Split(['.']).Last());
+                            excapes.Add(name.Split(['.']).Last());
                         }
-                        else if ((expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression)))
+                        else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
                         {
                             var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
-                            Excapes.Add(name);
+                            excapes.Add(name);
                         }
                     }
 
@@ -306,51 +304,51 @@ namespace Biwen.AutoClassGen
 
                     bodyInnerBuilder.AppendLine();
 
-                    //生成属性
-                    void genProperty(TypeSyntax @type)
+                    // 生成属性
+                    void GenProperty(TypeSyntax @type)
                     {
                         var symbols = compilation.GetSymbolsWithName(type.ToString());
                         foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
                         {
                             var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
-                            //命名空间
+                            // 命名空间
                             if (!namespaces.Contains(fullNameSpace))
                             {
                                 namespaces.Add(fullNameSpace);
                             }
                             symbol.GetMembers().OfType<IPropertySymbol>().ToList().ForEach(prop =>
                             {
-                                if (!Excapes.Contains(prop.Name))
+                                if (!excapes.Contains(prop.Name))
                                 {
-                                    //prop:
+                                    // prop:
                                     var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
-                                    //body:
+                                    // body:
                                     bodyInnerBuilder.AppendLine($"/// <inheritdoc cref=\"{@type}.{prop.Name}\" />");
                                     bodyInnerBuilder.AppendLine($"{raw}");
 
-                                    //mapper:
+                                    // mapper:
                                     mapperBodyBuilder.AppendLine($"{prop.Name} = model.{prop.Name},");
                                 }
                             });
                         }
                     }
 
-                    //生成属性:
+                    // 生成属性:
                     var symbols = compilation.GetSymbolsWithName(entityName, SymbolFilter.Type);
                     var symbol = symbols.Cast<ITypeSymbol>().FirstOrDefault();
-                    genProperty(SyntaxFactory.ParseTypeName(symbol.MetadataName));
+                    GenProperty(SyntaxFactory.ParseTypeName(symbol.MetadataName));
 
-                    //生成父类的属性:
+                    // 生成父类的属性:
                     INamedTypeSymbol? baseType = symbol.BaseType;
                     while (baseType != null)
                     {
-                        genProperty(SyntaxFactory.ParseTypeName(baseType.MetadataName));
+                        GenProperty(SyntaxFactory.ParseTypeName(baseType.MetadataName));
                         baseType = baseType.BaseType;
                     }
 
                     var rawClass = classTemp.Replace("$className", className);
                     rawClass = rawClass.Replace("$body", bodyInnerBuilder.ToString());
-                    //append:
+                    // append:
                     bodyBuilder.AppendLine(rawClass);
 
                     string rawNamespace = string.Empty;
@@ -361,22 +359,22 @@ namespace Biwen.AutoClassGen
                     source = source.Replace("$classes", bodyBuilder.ToString());
                     source = source.Replace("$ni", rootNamespace);
 
-                    //生成Mapper
+                    // 生成Mapper
                     var mapperSource = MapperTemplate.Replace("$namespace", namespaces.First());
                     mapperSource = mapperSource.Replace("$ns", rootNamespace);
                     mapperSource = mapperSource.Replace("$baseclass", entityName);
                     mapperSource = mapperSource.Replace("$dtoclass", className);
                     mapperSource = mapperSource.Replace("$body", mapperBodyBuilder.ToString());
 
-                    //合并
-                    source = source + Environment.NewLine + mapperSource;
+                    // 合并
+                    source = $"{source}\r\n{mapperSource}";
                     envStringBuilder.AppendLine(source);
                 }
             }
 
             envStringBuilder.AppendLine("#pragma warning restore");
             var envSource = envStringBuilder.ToString();
-            //format:
+            // format:
             envSource = FormatContent(envSource);
             context.AddSource($"Biwen.AutoClassGenDto.g.cs", SourceText.From(envSource, Encoding.UTF8));
         }

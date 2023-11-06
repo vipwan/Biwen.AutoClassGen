@@ -1,39 +1,48 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Editing;
-using System.Collections.Immutable;
-using System.Composition;
-using System.Data;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-
+﻿// <copyright file="SourceGenCodeFixProvider.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 namespace Biwen.AutoClassGen
 {
+    using System.Collections.Immutable;
+    using System.Composition;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CodeActions;
+    using Microsoft.CodeAnalysis.CodeFixes;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Microsoft.CodeAnalysis.Editing;
 
     /// <summary>
-    /// 代码修补提供者
+    /// 代码修补提供者.
     /// </summary>
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SourceGenCodeFixProvider)), Shared]
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SourceGenCodeFixProvider))]
+    [Shared]
     public sealed class SourceGenCodeFixProvider : CodeFixProvider
     {
+        /// <summary>
+        /// GetFixAllProvider.
+        /// </summary>
         public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
+        /// <summary>
+        /// FixableDiagnosticIds.
+        /// </summary>
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
             SourceGenAnalyzer.GEN001,
             SourceGenAnalyzer.GEN011,
             SourceGenAnalyzer.GEN021,
-            SourceGenAnalyzer.GEN031
-            );
+            SourceGenAnalyzer.GEN031);
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            if (root == null) return;
+            if (root == null)
+            {
+                return;
+            }
 
             foreach (var diagnostic in context.Diagnostics)
             {
@@ -49,15 +58,15 @@ namespace Biwen.AutoClassGen
                         return;
                     }
 
-                    //AncestorsAndSelf 祖先和自己
-                    //var @namespace = root.Parent?.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().First().Name.ToString();
-
+                    // AncestorsAndSelf 祖先和自己
+                    // var @namespace = root.Parent?.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().First().Name.ToString();
                     var rootCompUnit = (CompilationUnitSyntax)root;
                     var @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.NamespaceDeclaration)).FirstOrDefault() as NamespaceDeclarationSyntax)?.Name.ToString();
                     if (string.IsNullOrEmpty(@namespace))
                     {
                          @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault() as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
                     }
+
                     if (!string.IsNullOrEmpty(@namespace))
                     {
                         // Register a code action that will invoke the fix.
@@ -71,13 +80,15 @@ namespace Biwen.AutoClassGen
                 else if (diagnostic.Id == SourceGenAnalyzer.GEN011)
                 {
                     var diagnosticSpan = context.Span;
+
                     // getInnerModeNodeForTie = true so we are replacing the string literal node and not the whole argument node
                     var nodeToReplace = root.FindNode(diagnosticSpan, getInnermostNodeForTie: true);
                     if (nodeToReplace == null)
                     {
                         return;
                     }
-                    //移除第一个字母I eg."IRequest" -> "Request"
+
+                    // 移除第一个字母I eg."IRequest" -> "Request"
                     var raw = nodeToReplace.GetText().ToString().Substring(2, nodeToReplace.GetText().ToString().Length - 3);
                     CodeAction action = CodeAction.Create(
                         "GEN:使用推荐的类名称",
@@ -88,11 +99,16 @@ namespace Biwen.AutoClassGen
                 else if (diagnostic.Id == SourceGenAnalyzer.GEN001)
                 {
                     CodeAction action = CodeAction.Create(
-                        "GEN:删除无意义的特性[AutoGen]", async c =>
+                        "GEN:删除无意义的特性[AutoGen]",
+                        async c =>
                         {
                             var root = await context.Document.GetSyntaxRootAsync(c).ConfigureAwait(false);
                             var nowRoot = root?.RemoveNode(root?.FindNode(context.Span)!, SyntaxRemoveOptions.KeepExteriorTrivia);
-                            if (nowRoot == null) return context.Document.WithSyntaxRoot(root!);
+                            if (nowRoot == null)
+                            {
+                                return context.Document.WithSyntaxRoot(root!);
+                            }
+
                             return context.Document.WithSyntaxRoot(nowRoot);
                         },
                         equivalenceKey: nameof(SourceGenCodeFixProvider));
@@ -109,17 +125,10 @@ namespace Biwen.AutoClassGen
             }
         }
 
-
         /// <summary>
-        /// 替换字符串
+        /// 替换字符串.
         /// </summary>
-        /// <param name="document"></param>
-        /// <param name="nodeToReplace"></param>
-        /// <param name="stringText"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private static async Task<Document> ReplaceWithNameOfAsync(Document document, SyntaxNode nodeToReplace,
-            string stringText, CancellationToken cancellationToken)
+        private static async Task<Document> ReplaceWithNameOfAsync(Document document, SyntaxNode nodeToReplace, string stringText, CancellationToken cancellationToken)
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             if (nodeToReplace is not LiteralExpressionSyntax)
@@ -137,24 +146,17 @@ namespace Biwen.AutoClassGen
                  .WithTrailingTrivia(trailingTrivia)
                  .WithLeadingTrivia(leadingTrivia);
 
-            //var nameOfExpression = generator.NameOfExpression(generator.IdentifierName(stringText))
+            // var nameOfExpression = generator.NameOfExpression(generator.IdentifierName(stringText))
             //    .WithTrailingTrivia(trailingTrivia)
             //    .WithLeadingTrivia(leadingTrivia);
-
             var newRoot = root?.ReplaceNode(nodeToReplace, textExpression);
             return document.WithSyntaxRoot(newRoot!);
         }
 
         /// <summary>
-        /// 给接口添加特性
+        /// 给接口添加特性.
         /// </summary>
-        /// <param name="document"></param>
-        /// <param name="nodeToAddAttribute"></param>
-        /// <param name="attributeName"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private static async Task<Document> AddAttributeAsync(Document document, SyntaxNode nodeToAddAttribute,
-            string attributeName, CancellationToken cancellationToken)
+        private static async Task<Document> AddAttributeAsync(Document document, SyntaxNode nodeToAddAttribute, string attributeName, CancellationToken cancellationToken)
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             if (nodeToAddAttribute is not InterfaceDeclarationSyntax)
@@ -163,15 +165,17 @@ namespace Biwen.AutoClassGen
             }
 
             var rootCompUnit = (CompilationUnitSyntax)root!;
-            //命名空间
-            var @namespace = ((rootCompUnit.Members.Where(
-                m => m.IsKind(SyntaxKind.NamespaceDeclaration)).FirstOrDefault()) as NamespaceDeclarationSyntax)?.Name.ToString();
+
+            // 命名空间
+            var @namespace = (rootCompUnit.Members.Where(
+                m => m.IsKind(SyntaxKind.NamespaceDeclaration)).FirstOrDefault() as NamespaceDeclarationSyntax)?.Name.ToString();
             if (string.IsNullOrEmpty(@namespace))
             {
-                @namespace = ((rootCompUnit.Members.Where(
-                m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault()) as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
+                @namespace = (rootCompUnit.Members.Where(
+                m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault() as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
             }
-            //类名
+
+            // 类名
             var @class = "YourClassName";
 
             var trailingTrivia = nodeToAddAttribute.GetTrailingTrivia();
@@ -189,8 +193,7 @@ namespace Biwen.AutoClassGen
 
             var attributes = (nodeToAddAttribute as InterfaceDeclarationSyntax)!.AttributeLists.Add(
                 SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName(attributeName))
-                .WithArgumentList(argumentLis)
-                ))
+                .WithArgumentList(argumentLis)))
                 .WithTrailingTrivia(trailingTrivia)
                 .WithLeadingTrivia(leadingTrivia));
 

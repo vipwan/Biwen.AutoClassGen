@@ -5,6 +5,7 @@
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
 		<Authors>万雅虎</Authors>
 		<PackageVersion>1.1.0.2</PackageVersion>
@@ -25,6 +26,8 @@
 		<PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
 		<PackageReleaseNotes>提供对DTO的Gen支持,提供简单的Mapper</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>1573,1591,1712</NoWarn>
 	</PropertyGroup>
 
 	<!--开发调试阶段-->
@@ -40,6 +43,12 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0-3.final" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0-3.final" PrivateAssets="all" />
+
+		<PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		
 	</ItemGroup>
 
 </Project>

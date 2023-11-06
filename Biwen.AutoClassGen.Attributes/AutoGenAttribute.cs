@@ -14,12 +14,12 @@ namespace Biwen.AutoClassGen.Attributes
         /// </summary>
         public string ClassName { get; private set; }
         /// <summary>
-        ///full interface name
+        /// full interface name
         /// </summary>
         public string InterfaceName { get; private set; }
 
         /// <summary>
-        /// 
+        /// AutoGen
         /// </summary>
         /// <param name="className">类名</param>
         /// <param name="interfaceName">命名空间全名,如:Biwen.QuickApi</param>

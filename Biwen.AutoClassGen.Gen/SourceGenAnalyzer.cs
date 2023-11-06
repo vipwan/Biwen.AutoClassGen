@@ -1,78 +1,68 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using System.Linq;
-
-namespace Biwen.AutoClassGen
+﻿namespace Biwen.AutoClassGen
 {
+    using System.Collections.Immutable;
+    using System.Linq;
+    using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Microsoft.CodeAnalysis.Diagnostics;
+
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-#pragma warning disable RS1036 // 指定分析器禁止的 API 强制设置
     public class SourceGenAnalyzer : DiagnosticAnalyzer
-#pragma warning restore RS1036 // 指定分析器禁止的 API 强制设置
     {
         #region DiagnosticDescriptors
 
-        const string helplink = "https://github.com/vipwan/Biwen.AutoClassGen#gen-error-code";
+        private const string Helplink = "https://github.com/vipwan/Biwen.AutoClassGen#gen-error-code";
 
         public const string GEN001 = "GEN001";
         public const string GEN011 = "GEN011";
         public const string GEN021 = "GEN021";
-        public const string GEN031 = "GEN031";//推荐生成
+        public const string GEN031 = "GEN031"; // 推荐生成
 
         /// <summary>
         /// 无法生成类的错误
         /// </summary>
-#pragma warning disable RS2008 // 启用分析器发布跟踪
         private static readonly DiagnosticDescriptor InvalidDeclareError = new(id: GEN001,
-#pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "标注接口没有继承基础接口因此不能生成类",
                                                                               messageFormat: "没有实现基础接口因此不能生成类,请删除标注的特性[AutoGen] or 继承相应的接口",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Error,
-                                                                              helpLinkUri: helplink,
+                                                                              helpLinkUri: Helplink,
                                                                               isEnabledByDefault: true);
 
 
         /// <summary>
         /// 重名错误
         /// </summary>
-#pragma warning disable RS2008 // 启用分析器发布跟踪
         private static readonly DiagnosticDescriptor InvalidDeclareNameError = new(id: GEN011,
-#pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "生成类的类名称不可和接口名重名",
                                                                               messageFormat: "生成类的类名称不可和接口名重名",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Error,
-                                                                              helpLinkUri: helplink,
+                                                                              helpLinkUri: Helplink,
                                                                               isEnabledByDefault: true);
 
         /// <summary>
         /// 命名空间规范警告
         /// </summary>
-#pragma warning disable RS2008 // 启用分析器发布跟踪
         private static readonly DiagnosticDescriptor SuggestDeclareNameWarning = new(id: GEN021,
-#pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "推荐使用相同的命名空间",
                                                                               messageFormat: "推荐使用相同的命名空间",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Warning,
-                                                                              helpLinkUri: helplink,
+                                                                              helpLinkUri: Helplink,
                                                                               isEnabledByDefault: true);
 
 
         /// <summary>
         /// 推荐使用自动生成
         /// </summary>
-#pragma warning disable RS2008 // 启用分析器发布跟踪
         private static readonly DiagnosticDescriptor SuggestAutoGen = new(id: GEN031,
-#pragma warning restore RS2008 // 启用分析器发布跟踪
                                                                               title: "使用[AutoGen]自动生成",
                                                                               messageFormat: "使用[AutoGen]自动生成",
                                                                               category: typeof(SourceGenerator).Assembly.GetName().Name,
                                                                               DiagnosticSeverity.Info,
-                                                                              helpLinkUri: helplink,
+                                                                              helpLinkUri: Helplink,
                                                                               isEnabledByDefault: true);
 
 
@@ -82,10 +72,9 @@ namespace Biwen.AutoClassGen
             InvalidDeclareError,
             InvalidDeclareNameError,
             SuggestDeclareNameWarning,
-            SuggestAutoGen
-            );
+            SuggestAutoGen);
 
-        const string AttributeValueMetadataName = "AutoGen";
+        private const string AttributeValueMetadataName = "AutoGen";
 
         public override void Initialize(AnalysisContext context)
         {
@@ -123,7 +112,7 @@ namespace Biwen.AutoClassGen
                                 ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
                             }
 
-                            //NamespaceDeclarationSyntax
+                            // NamespaceDeclarationSyntax
                             if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
                             @namespace?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
                             {
@@ -131,7 +120,7 @@ namespace Biwen.AutoClassGen
                                 // issue warning
                                 ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
                             }
-                            //FileScopedNamespaceDeclaration
+                            // FileScopedNamespaceDeclaration
                             if (declaration.Parent is FileScopedNamespaceDeclarationSyntax @namespace2 &&
                             @namespace2?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
                             {
@@ -143,7 +132,7 @@ namespace Biwen.AutoClassGen
                     }
                 }
 
-                //suggest
+                // suggest
                 if (declaration.BaseList != null && declaration.BaseList.Types.Any(x => x.IsKind(SyntaxKind.SimpleBaseType)))
                 {
                     var haveAttr = declaration.AttributeLists.Any(x => x.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName));
