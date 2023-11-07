@@ -1,7 +1,7 @@
 ## Usage
 
 ```c#
-//netstandard2.0&net6.0 +
+//netstandard2.0 +
 [AutoDto(Type entityType ,params string[] escapeCols)]
 
 //C#11(NET7+) support generic attribute
