@@ -24,10 +24,12 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)'=='Release'">
+		<PackageReference Include="Biwen.AutoClassGen" Version="1.2.0.0" PrivateAssets="contentfiles;analyzers" />
+	</ItemGroup>
+
 	<ItemGroup>
-		
-		<!--开发阶段注释,打包取消注释-->
-		<!--<PackageReference Include="Biwen.AutoClassGen" Version="1.2.0.0" PrivateAssets="contentfiles;analyzers" />-->
 		<PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
