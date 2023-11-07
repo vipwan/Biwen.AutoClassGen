@@ -1,5 +1,14 @@
 ## Usage
 
+```c#
+//netstandard2.0&net6.0 +
+[AutoDto(Type entityType ,params string[] escapeCols)]
+
+//C#11(NET7+) support generic attribute
+[AutoDto<T>(params string[] escapeCols)]
+
+```
+
 ### Your Entitys
 
 ```c#
@@ -57,6 +66,14 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
 {
     [AutoDto(typeof(User), nameof(User.Id), "TestCol")]
     public partial class UserDto
+    {
+    }
+
+    /// <summary>
+    /// C#11(NET7+) support generic attribute
+    /// </summary>
+    [AutoDto<User>(nameof(User.Email), "TestCol")]
+    public partial class User3Dto
     {
     }
 }
