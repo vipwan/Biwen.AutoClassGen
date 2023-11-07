@@ -1,5 +1,6 @@
 ﻿namespace Biwen.AutoClassGen
 {
+    using System;
     using System.Collections.Immutable;
     using System.Linq;
     using Microsoft.CodeAnalysis;
@@ -18,6 +19,7 @@
         public const string GEN011 = "GEN011";
         public const string GEN021 = "GEN021";
         public const string GEN031 = "GEN031"; // 推荐生成
+        public const string GEN041 = "GEN041"; // 重复标注
 
         /// <summary>
         /// 无法生成类的错误
@@ -53,7 +55,6 @@
                                                                               helpLinkUri: Helplink,
                                                                               isEnabledByDefault: true);
 
-
         /// <summary>
         /// 推荐使用自动生成
         /// </summary>
@@ -66,15 +67,35 @@
                                                                               isEnabledByDefault: true);
 
 
+        /// <summary>
+        /// Dto特性重复标注
+        /// </summary>
+        private static readonly DiagnosticDescriptor MutiMarkedAutoDtoError = new(id: GEN041,
+                                                                              title: "重复标注[AutoDto]",
+                                                                              messageFormat: "重复标注了[AutoDto],请删除多余的标注",
+                                                                              category: typeof(SourceGenerator).Assembly.GetName().Name,
+                                                                              DiagnosticSeverity.Error,
+                                                                              helpLinkUri: Helplink,
+                                                                              isEnabledByDefault: true);
+
+
+
+
         #endregion
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
             InvalidDeclareError,
             InvalidDeclareNameError,
             SuggestDeclareNameWarning,
-            SuggestAutoGen);
+            SuggestAutoGen,
+            MutiMarkedAutoDtoError);
 
         private const string AttributeValueMetadataName = "AutoGen";
+        /// <summary>
+        /// Dto特性名称,注意存在泛型的情况
+        /// </summary>
+        private const string AttributeValueMetadataNameDto = "AutoDto";
+
 
         public override void Initialize(AnalysisContext context)
         {
@@ -83,67 +104,92 @@
             context.EnableConcurrentExecution();
             context.RegisterSyntaxNodeAction(ctx =>
             {
-                // Find implicitly typed interface declarations.
-                var declaration = (InterfaceDeclarationSyntax)ctx.Node;
-                if (declaration == null) return;
-
-                if (declaration.AttributeLists.Count > 0)
+                var kind = ctx.Node.Kind();
+                // InterfaceDeclarationSyntax
+                if (kind == SyntaxKind.InterfaceDeclaration)
                 {
-                    foreach (var attr in declaration.AttributeLists.AsEnumerable())
+                    var declaration = (InterfaceDeclarationSyntax)ctx.Node;
+
+                    if (declaration.AttributeLists.Count > 0)
                     {
-                        if (attr.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName))
+                        foreach (var attr in declaration.AttributeLists.AsEnumerable())
                         {
-                            if (declaration.BaseList == null || !declaration.BaseList.Types.Any())
+                            if (attr.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName))
                             {
+                                if (declaration.BaseList == null || !declaration.BaseList.Types.Any())
+                                {
+                                    // issue error
+                                    ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, attr.GetLocation()));
+                                }
+
+                                var arg0 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
+                                .ArgumentList!.Arguments[0];
+
+                                var arg1 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
+                                .ArgumentList!.Arguments[1];
+
+                                if (declaration.Identifier.Text == arg0.GetText().ToString().Replace("\"", ""))
+                                {
+                                    var location = arg0?.GetLocation();
+                                    // issue error
+                                    ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
+                                }
+
+                                // NamespaceDeclarationSyntax
+                                if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
+                                @namespace?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
+                                {
+                                    var location = arg1?.GetLocation();
+                                    // issue warning
+                                    ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
+                                }
+                                // FileScopedNamespaceDeclaration
+                                if (declaration.Parent is FileScopedNamespaceDeclarationSyntax @namespace2 &&
+                                @namespace2?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
+                                {
+                                    var location = arg1?.GetLocation();
+                                    // issue warning
+                                    ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
+                                }
+                            }
+                        }
+                    }
+                    // suggest
+                    if (declaration.BaseList != null && declaration.BaseList.Types.Any(x => x.IsKind(SyntaxKind.SimpleBaseType)))
+                    {
+                        var haveAttr = declaration.AttributeLists.Any(x => x.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName));
+                        if (!haveAttr)
+                        {
+                            var location = declaration.GetLocation();
+                            // issue suggest
+                            ctx.ReportDiagnostic(Diagnostic.Create(SuggestAutoGen, location));
+                        }
+                    }
+                }
+                // ClassDeclarationSyntax
+                if (kind == SyntaxKind.ClassDeclaration)
+                {
+                    var declaration = (ClassDeclarationSyntax)ctx.Node;
+                    if (declaration.AttributeLists.Count > 0)
+                    {
+                        foreach (var attr in declaration.AttributeLists.AsEnumerable())
+                        {
+                            if (attr.Attributes.Where(x => x.Name.ToString().IndexOf(
+                                AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0).Count() > 1)
+                            {
+                                var location = declaration.GetLocation();
+
                                 // issue error
-                                ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareError, attr.GetLocation()));
-                            }
-
-                            var arg0 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
-                            .ArgumentList!.Arguments[0];
-
-                            var arg1 = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataName)
-                            .ArgumentList!.Arguments[1];
-
-                            if (declaration.Identifier.Text == arg0.GetText().ToString().Replace("\"", ""))
-                            {
-                                var location = arg0?.GetLocation();
-                                // issue error
-                                ctx.ReportDiagnostic(Diagnostic.Create(InvalidDeclareNameError, location));
-                            }
-
-                            // NamespaceDeclarationSyntax
-                            if (declaration.Parent is NamespaceDeclarationSyntax @namespace &&
-                            @namespace?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
-                            {
-                                var location = arg1?.GetLocation();
-                                // issue warning
-                                ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
-                            }
-                            // FileScopedNamespaceDeclaration
-                            if (declaration.Parent is FileScopedNamespaceDeclarationSyntax @namespace2 &&
-                            @namespace2?.Name.ToString() != arg1?.GetText().ToString().Replace("\"", ""))
-                            {
-                                var location = arg1?.GetLocation();
-                                // issue warning
-                                ctx.ReportDiagnostic(Diagnostic.Create(SuggestDeclareNameWarning, location));
+                                ctx.ReportDiagnostic(Diagnostic.Create(MutiMarkedAutoDtoError, location));
                             }
                         }
                     }
                 }
 
-                // suggest
-                if (declaration.BaseList != null && declaration.BaseList.Types.Any(x => x.IsKind(SyntaxKind.SimpleBaseType)))
-                {
-                    var haveAttr = declaration.AttributeLists.Any(x => x.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName));
-                    if (!haveAttr)
-                    {
-                        var location = declaration.GetLocation();
-                        // issue suggest
-                        ctx.ReportDiagnostic(Diagnostic.Create(SuggestAutoGen, location));
-                    }
-                }
-            }, SyntaxKind.InterfaceDeclaration);
+            },
+            SyntaxKind.InterfaceDeclaration,
+            SyntaxKind.ClassDeclaration);
+
         }
     }
 }

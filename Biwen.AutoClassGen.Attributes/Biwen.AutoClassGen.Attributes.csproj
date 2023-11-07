@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFrameworks>netstandard2.0;net7.0</TargetFrameworks>
 		<PackageVersion>1.1.0.3</PackageVersion>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<Authors>万雅虎</Authors>
@@ -32,7 +32,7 @@
 	</Choose>
 	<ItemGroup>
 		
-		<PackageReference Include="Biwen.AutoClassGen" Version="1.1.0.3" PrivateAssets="contentfiles;analyzers" />
+		<!--<PackageReference Include="Biwen.AutoClassGen" Version="1.1.0.3" PrivateAssets="contentfiles;analyzers" />-->
 		
 		<PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507">
 			<PrivateAssets>all</PrivateAssets>

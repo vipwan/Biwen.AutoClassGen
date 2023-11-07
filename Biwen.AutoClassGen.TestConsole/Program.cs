@@ -1,4 +1,5 @@
 ﻿using Biwen.AutoClassGen;
+using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 
 
@@ -21,6 +22,7 @@ Biwen.AutoClassGen.TestConsole.Dtos.UserDto userDto2 = new()
     Age = 18,
 };
 
+
 var user = new User
 {
     Age = 18,
@@ -36,7 +38,15 @@ var userDto = user.MapperToUserDto();
 //mapper to User2Dto
 var user2Dto = user.MapperToUser2Dto();
 
+//from [AutoDto<T>(params string?[])]
+var user3Dto = user.MapperToUser3Dto();
+
+
 Console.WriteLine($"{queryRequest.KeyWord}");
-Console.WriteLine($"I`m {userDto.FirstName} {userDto.LastName} I`m {userDto.Age} years old");
+Console.WriteLine($"I`m {nameof(userDto)} {userDto.FirstName} {userDto.LastName} I`m {userDto.Age} years old");
+Console.WriteLine($"I`m {nameof(user2Dto)} {user2Dto.FirstName} {user2Dto.LastName} I`m {user2Dto.Age} years old");
+Console.WriteLine($"I`m {nameof(user3Dto)} {user3Dto.FirstName} {user3Dto.LastName} I`m {user3Dto.Age} years old");
+
+
 
 Console.ReadLine();

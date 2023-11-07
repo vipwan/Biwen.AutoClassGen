@@ -18,9 +18,19 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
     /// to be generated more than one
     /// </summary>
     [AutoDto(typeof(User), nameof(User.Email))]
+
     public partial class User2Dto
     {
     }
+
+    /// <summary>
+    /// another way to be generated
+    /// </summary>
+    [AutoDto<User>(nameof(User.Email), "TestCol")]
+    public partial class User3Dto
+    {
+    }
+
 }
 
 namespace Biwen.AutoClassGen.TestConsole.Entitys

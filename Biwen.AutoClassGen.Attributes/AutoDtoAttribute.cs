@@ -21,4 +21,22 @@ namespace Biwen.AutoClassGen.Attributes
             ExcludeProps = excludeProps;
         }
     }
+
+#if NET7_0_OR_GREATER
+
+    /// <summary>
+    /// 自动创建Dto
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+#pragma warning disable SA1402 // File may only contain a single type
+    public class AutoDtoAttribute<T> : AutoDtoAttribute
+#pragma warning restore SA1402 // File may only contain a single type
+    {
+        public AutoDtoAttribute(params string[] excludeProps) : base(typeof(T), excludeProps)
+        {
+        }
+    }
+
+#endif
+
 }
