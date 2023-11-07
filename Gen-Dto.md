@@ -140,3 +140,7 @@ namespace Biwen.AutoClassGen.TestConsole.Entitys
 }
 #pragma warning restore
 ```
+
+### Report Diagnostic Code
+
+- GEN041: Repeat Mark [AutoDto] mutil times
