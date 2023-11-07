@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
-		<PackageVersion>1.1.0.2</PackageVersion>
+		<PackageVersion>1.1.0.3</PackageVersion>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<Authors>万雅虎</Authors>
 		<RepositoryUrl>https://github.com/vipwan/Biwen.AutoClassGen</RepositoryUrl>
@@ -14,6 +14,7 @@
 		<PackageReleaseNotes>SG</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1573,1591,1712</NoWarn>
+		<Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -23,8 +24,16 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
+	<!--当Release时引用Biwen.AutoClassGen-->
+	<Choose>
+		<When Condition=" '$(Configuration)'!='debug' ">
+
+		</When>
+	</Choose>
 	<ItemGroup>
-		<PackageReference Include="Biwen.AutoClassGen" Version="1.1.0.2" PrivateAssets="contentfiles;analyzers" />
+		
+		<PackageReference Include="Biwen.AutoClassGen" Version="1.1.0.3" PrivateAssets="contentfiles;analyzers" />
+		
 		<PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
