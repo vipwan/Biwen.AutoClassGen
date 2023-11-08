@@ -14,6 +14,7 @@ namespace Biwen.AutoClassGen
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Editing;
+    using Desc = DiagnosticDescriptors;
 
     /// <summary>
     /// 代码修补提供者.
@@ -31,10 +32,10 @@ namespace Biwen.AutoClassGen
         /// FixableDiagnosticIds.
         /// </summary>
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
-            SourceGenAnalyzer.GEN001,
-            SourceGenAnalyzer.GEN011,
-            SourceGenAnalyzer.GEN021,
-            SourceGenAnalyzer.GEN031);
+            Desc.GEN001,
+            Desc.GEN011,
+            Desc.GEN021,
+            Desc.GEN031);
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
@@ -47,7 +48,7 @@ namespace Biwen.AutoClassGen
             foreach (var diagnostic in context.Diagnostics)
             {
                 // Only allow code fixes for diagnostics with the matching id.
-                if (diagnostic.Id == SourceGenAnalyzer.GEN021)
+                if (diagnostic.Id == Desc.GEN021)
                 {
                     var diagnosticSpan = context.Span;
 
@@ -77,7 +78,7 @@ namespace Biwen.AutoClassGen
                         context.RegisterCodeFix(action, diagnostic);
                     }
                 }
-                else if (diagnostic.Id == SourceGenAnalyzer.GEN011)
+                else if (diagnostic.Id == Desc.GEN011)
                 {
                     var diagnosticSpan = context.Span;
 
@@ -96,7 +97,7 @@ namespace Biwen.AutoClassGen
                         equivalenceKey: nameof(SourceGenCodeFixProvider));
                     context.RegisterCodeFix(action, diagnostic);
                 }
-                else if (diagnostic.Id == SourceGenAnalyzer.GEN001)
+                else if (diagnostic.Id == Desc.GEN001)
                 {
                     CodeAction action = CodeAction.Create(
                         "GEN:删除无意义的特性[AutoGen]",
@@ -114,7 +115,7 @@ namespace Biwen.AutoClassGen
                         equivalenceKey: nameof(SourceGenCodeFixProvider));
                     context.RegisterCodeFix(action, diagnostic);
                 }
-                else if (diagnostic.Id == SourceGenAnalyzer.GEN031)
+                else if (diagnostic.Id == Desc.GEN031)
                 {
                     CodeAction action = CodeAction.Create(
                         "GEN:添加自动生成特性[AutoGen]",

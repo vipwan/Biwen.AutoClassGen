@@ -10,11 +10,11 @@ namespace Biwen.AutoClassGen
     using System.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
-    using System.Xml.Linq;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Text;
+    using Desc = DiagnosticDescriptors;
 
     [Generator(LanguageNames.CSharp)]
     public class SourceGenerator : IIncrementalGenerator
@@ -300,7 +300,7 @@ namespace Biwen.AutoClassGen
                 {
                     var location = node.GetLocation();
                     // issue error
-                    context.ReportDiagnostic(Diagnostic.Create(SourceGenAnalyzer.MutiMarkedAutoDtoError, location));
+                    context.ReportDiagnostic(Diagnostic.Create(Desc.MutiMarkedAutoDtoError, location));
                     continue;
                 }
 
