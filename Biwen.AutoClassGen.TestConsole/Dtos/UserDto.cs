@@ -1,10 +1,6 @@
-﻿using Biwen.AutoClassGen.TestConsole.Dtos;
-using Biwen.AutoClassGen.TestConsole.Entitys;
-
-
-#pragma warning disable
-namespace Biwen.AutoClassGen.TestConsole.Dtos
+﻿namespace Biwen.AutoClassGen.TestConsole.Dtos
 {
+    using Biwen.AutoClassGen.TestConsole.Entitys;
 
     /// <summary>
     /// to be generated
@@ -27,10 +23,10 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
     /// another way to be generated
     /// </summary>
     [AutoDto<User>(nameof(User.Email), "TestCol")]
+    //[AutoDto(typeof(User), nameof(User.Email))]
     public partial class User3Dto
     {
     }
-
 }
 
 namespace Biwen.AutoClassGen.TestConsole.Entitys
@@ -52,6 +48,3 @@ namespace Biwen.AutoClassGen.TestConsole.Entitys
         //}
     }
 }
-
-
-#pragma warning restore

@@ -4,11 +4,13 @@
 
 namespace Biwen.AutoClassGen
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
+    using System.Xml.Linq;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -62,7 +64,6 @@ namespace Biwen.AutoClassGen
             context.RegisterSourceOutput(compilationAndTypesDto, static (spc, source) => HandleAnnotatedNodesDto(source.Item1, source.Item2, spc));
 
             #endregion
-
 
             #region AutoDtoAttributeG
 
@@ -274,7 +275,6 @@ namespace Biwen.AutoClassGen
                     continue;
                 }
 
-
                 //转译的Entity类名
                 var entityName = string.Empty;
                 var eType = (attributeSyntax.ArgumentList!.Arguments[0].Expression as TypeOfExpressionSyntax)!.Type;
@@ -292,6 +292,15 @@ namespace Biwen.AutoClassGen
                 }
                 if (string.IsNullOrEmpty(entityName))
                 {
+                    continue;
+                }
+
+                if (node.AttributeLists.AsEnumerable().Where(
+                    x => x.Attributes[0].Name.ToString().IndexOf(AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0).Count() > 1)
+                {
+                    var location = node.GetLocation();
+                    // issue error
+                    context.ReportDiagnostic(Diagnostic.Create(SourceGenAnalyzer.MutiMarkedAutoDtoError, location));
                     continue;
                 }
 
