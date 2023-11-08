@@ -29,7 +29,7 @@ namespace Biwen.AutoClassGen.Attributes
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 #pragma warning disable SA1402 // File may only contain a single type
-    public class AutoDtoAttribute<T> : AutoDtoAttribute
+    public class AutoDtoAttribute<T> : AutoDtoAttribute where T : class
 #pragma warning restore SA1402 // File may only contain a single type
     {
         public AutoDtoAttribute(params string[] excludeProps) : base(typeof(T), excludeProps)
