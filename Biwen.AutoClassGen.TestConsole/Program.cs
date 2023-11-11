@@ -1,10 +1,22 @@
 ﻿using Biwen.AutoClassGen;
+using Biwen.AutoClassGen.TestConsole.Decors;
 using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 
 
-// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+var builder = WebApplication.CreateBuilder();
+
+
+builder.Services.AddScoped<IHelloService, HelloService>();
+builder.Services.AddScoped<HelloService>();
+
+//add auto decor
+builder.Services.AddAutoDecor();
+
+
+
+
+var app = builder.Build();
 
 Biwen.AutoClassGen.Models.QueryRequest queryRequest = new()
 {

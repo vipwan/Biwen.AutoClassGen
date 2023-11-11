@@ -15,20 +15,27 @@
     public class SourceGenAnalyzer : DiagnosticAnalyzer
     {
 
-
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
             Desc.InvalidDeclareError,
             Desc.InvalidDeclareNameError,
             Desc.SuggestDeclareNameWarning,
             Desc.SuggestAutoGen,
             Desc.MutiMarkedAutoDtoError,
-            Desc.MarkedAbstractAutoDtoError);
+            Desc.MarkedAbstractAutoDtoError,
+            Desc.MarkedAutoDecorError);
 
         private const string AttributeValueMetadataName = "AutoGen";
         /// <summary>
         /// Dto特性名称,注意存在泛型的情况
         /// </summary>
         private const string AttributeValueMetadataNameDto = "AutoDto";
+
+        /// <summary>
+        /// AutoDecor,注意存在泛型的情况
+        /// </summary>
+
+        private const string AttributeValueMetadataNameDecor = "AutoDecor";
+
 
 
         public override void Initialize(AnalysisContext context)
@@ -129,13 +136,58 @@
                                     ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAbstractAutoDtoError, location));
                                 }
                             }
+
+                            if (attr.Attributes.Where(x => x.Name.ToString().IndexOf(
+                                AttributeValueMetadataNameDecor, StringComparison.Ordinal) == 0).Any())
+                            {
+                                foreach (var at in attr.Attributes)
+                                {
+                                    if (at.ArgumentList != null && at.ArgumentList.Arguments.Any())
+                                    {
+                                        var arg0 = at.ArgumentList.Arguments[0];
+                                        if (arg0.Expression is TypeOfExpressionSyntax express)
+                                        {
+                                            var implNameStr = express.Type.ToString();
+                                            var symbol = ctx.Compilation.GetSymbolsWithName(implNameStr, SymbolFilter.Type);
+                                            if (symbol.Any())
+                                            {
+                                                var implName = symbol.First();
+                                                if (declaration.BaseList?.Types.Any(x => x.Type.ToString() == implName.Name) is not true
+                                                && declaration.Identifier.Text != (implName as ITypeSymbol)?.BaseType?.Name)
+                                                {
+                                                    var location = arg0?.GetLocation();
+                                                    // issue error
+                                                    ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAutoDecorError, location));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (at.Name is GenericNameSyntax genericNameSyntax)
+                                    {
+                                        var implNameStr = genericNameSyntax.TypeArgumentList.Arguments[0].ToString();
+                                        var symbol = ctx.Compilation.GetSymbolsWithName(genericNameSyntax.TypeArgumentList.Arguments[0].ToString(), SymbolFilter.Type);
+
+                                        if (symbol.Any())
+                                        {
+                                            var implName = symbol.First();
+                                            if (declaration.BaseList?.Types.Any(x => x.Type.ToString() == implName.Name) is not true
+                                            && declaration.Identifier.Text != (implName as ITypeSymbol)?.BaseType?.Name)
+                                            {
+                                                var location = at?.GetLocation();
+                                                // issue error
+                                                ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAutoDecorError, location));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             },
             SyntaxKind.InterfaceDeclaration,
-            SyntaxKind.ClassDeclaration);
-
+            SyntaxKind.ClassDeclaration
+            );
         }
     }
 }

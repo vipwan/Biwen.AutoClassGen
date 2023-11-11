@@ -15,6 +15,7 @@ dotnet add package Biwen.AutoClassGen.Attributes
 
 - [Gen DTO Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Dto.md)
 - [Gen Request Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-request.md)
+- [Gen Decoration Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Decor.md)
 
 ### Used by
 #### if you use this library, please tell me, I will add your project here.

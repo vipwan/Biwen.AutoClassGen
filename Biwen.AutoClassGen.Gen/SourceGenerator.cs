@@ -32,6 +32,17 @@ namespace Biwen.AutoClassGen
         private const string AttributeMetadataNameDtoG = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute`1";
 
 
+        private const string AttributeMetadataNameDecor = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute";
+
+        //private const string AttributeValueMetadataNameDecor = "AutoDecor";
+        /// <summary>
+        /// 泛型AutoDecorAttribute
+        /// </summary>
+        private const string AttributeMetadataNameDecorG = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute`1";
+
+
+
+
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
 
@@ -79,6 +90,26 @@ namespace Biwen.AutoClassGen
 
             #endregion
 
+
+            #region AutoDecorAttribute
+
+            var nodesDecor = context.SyntaxProvider.ForAttributeWithMetadataName(
+                               AttributeMetadataNameDecor,
+                               (context, attributeSyntax) => true,
+                               (syntaxContext, _) => syntaxContext.TargetSymbol).Collect();
+
+            var nodesDecorG = context.SyntaxProvider.ForAttributeWithMetadataName(
+                   AttributeMetadataNameDecorG,
+                   (context, attributeSyntax) => true,
+                   (syntaxContext, _) => syntaxContext.TargetSymbol).Collect();
+
+            IncrementalValueProvider<((Compilation, ImmutableArray<ISymbol>), ImmutableArray<ISymbol>)> compilationAndTypesDecor =
+                context.CompilationProvider.Combine(nodesDecor).Combine(nodesDecorG);
+
+            context.RegisterSourceOutput(compilationAndTypesDecor, static (spc, source) =>
+            HandleAnnotatedNodesDecor(source.Item1.Item1, source.Item1.Item2, source.Item2, spc));
+
+            #endregion
         }
 
 
@@ -428,7 +459,7 @@ namespace Biwen.AutoClassGen
         /// <param name="context"></param>
         private static void HandleAnnotatedNodesDtoG(Compilation compilation, ImmutableArray<SyntaxNode> nodes, SourceProductionContext context)
         {
-            if(nodes.Length == 0) return;
+            if (nodes.Length == 0) return;
 
             StringBuilder envStringBuilder = new();
 
@@ -589,6 +620,116 @@ namespace Biwen.AutoClassGen
             // format:
             envSource = FormatContent(envSource);
             context.AddSource($"Biwen.AutoClassGenDtoG.g.cs", SourceText.From(envSource, Encoding.UTF8));
+        }
+
+
+        private static void HandleAnnotatedNodesDecor(Compilation compilation, ImmutableArray<ISymbol> nodes, ImmutableArray<ISymbol> nodes2, SourceProductionContext context)
+        {
+            if (nodes.Length == 0) return;
+
+            IList<KeyValuePair<string, string>> ofImpls = [];
+            // (普通特性)获取所有实现类
+            foreach (var node in nodes)
+            {
+                var tName = node.OriginalDefinition.ToDisplayString();
+                foreach (var item in node.GetAttributes().Where(x => x.AttributeClass?.MetadataName == "AutoDecorAttribute"))
+                {
+                    var attributeSyntax = item?.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+
+                    if (attributeSyntax?.ArgumentList?.Arguments[0].Expression is TypeOfExpressionSyntax implNameSyntax)
+                    {
+                        var implNameStr = implNameSyntax.Type.ToString();
+                        var symbol = compilation.GetSymbolsWithName(implNameStr, SymbolFilter.Type);
+
+                        if (symbol?.Any() is true)
+                        {
+                            var implName = symbol.First().ToDisplayString();
+                            implNameStr = implName;
+
+                            ofImpls.Add(new KeyValuePair<string, string>(tName, implName));
+                        }
+                    }
+                }
+            }
+            // (泛型特性)获取所有实现类
+            foreach (var node in nodes2)
+            {
+                var tName = node.OriginalDefinition.ToDisplayString();
+                foreach (var item in node.GetAttributes().Where(x => x.AttributeClass?.MetadataName == "AutoDecorAttribute`1"))
+                {
+                    var attributeSyntax = item?.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+
+                    if (attributeSyntax?.Name is GenericNameSyntax genericNameSyntax)
+                    {
+                        var implNameStr = genericNameSyntax.TypeArgumentList.Arguments[0].ToString();
+                        var symbol = compilation.GetSymbolsWithName(genericNameSyntax.TypeArgumentList.Arguments[0].ToString(), SymbolFilter.Type);
+
+                        if (symbol?.Any() is true)
+                        {
+                            var implName = symbol.First().ToDisplayString();
+                            implNameStr = implName;
+
+                            ofImpls.Add(new KeyValuePair<string, string>(tName, implName));
+                        }
+                    }
+                }
+            }
+
+            if (ofImpls.Count == 0)
+            {
+                return;
+            }
+
+            //namespace Microsoft.Extensions.DependencyInjection
+            //    {
+            //        public static class AutoAopExtensions
+            //        {
+            //            /// <summary>
+            //            /// AddAutoDecor
+            //            /// </summary>
+            //            /// <param name="services"></param>
+            //            /// <returns></returns>
+            //            public static IServiceCollection AddAutoDecor(this IServiceCollection services)
+            //            {
+            //                services.Decorate<IHelloService, IHelloServiceDecorate>();
+            //                services.Decorate<IHelloService, IHelloServiceDecorate2>();
+            //                return services;
+            //            }
+            //        }
+            //    }
+
+            StringBuilder envStringBuilder = new();
+            envStringBuilder.AppendLine("// <auto-generated />");
+            envStringBuilder.AppendLine("// author:vipwan@outlook.com 万雅虎");
+            envStringBuilder.AppendLine("// issue:https://github.com/vipwan/Biwen.AutoClassGen/issues");
+            envStringBuilder.AppendLine("// 如果你在使用中遇到问题,请第一时间issue,谢谢!");
+            envStringBuilder.AppendLine("// This file is generated by Biwen.AutoClassGen.SourceGenerator");
+            envStringBuilder.AppendLine();
+            envStringBuilder.AppendLine("#pragma warning disable");
+            envStringBuilder.AppendLine("namespace Microsoft.Extensions.DependencyInjection");
+            envStringBuilder.AppendLine("{");
+            envStringBuilder.AppendLine("public static class AutoDecorExtensions");
+            envStringBuilder.AppendLine("{");
+            envStringBuilder.AppendLine("/// <summary>");
+            envStringBuilder.AppendLine("/// AddAutoDecor");
+            envStringBuilder.AppendLine("/// </summary>");
+            envStringBuilder.AppendLine("public static IServiceCollection AddAutoDecor(this IServiceCollection services)");
+            envStringBuilder.AppendLine("{");
+            // decor
+            foreach (var item in ofImpls)
+            {
+                envStringBuilder.AppendLine($"services.Decorate<{item.Key}, {item.Value}>();");
+            }
+            envStringBuilder.AppendLine("return services;");
+            envStringBuilder.AppendLine("}");
+            envStringBuilder.AppendLine("}");
+            envStringBuilder.AppendLine("}");
+            envStringBuilder.AppendLine("#pragma warning restore");
+
+            var envSource = envStringBuilder.ToString();
+            // format:
+            envSource = FormatContent(envSource);
+            context.AddSource($"Biwen.AutoClassGenDecor.g.cs", SourceText.From(envSource, Encoding.UTF8));
         }
 
 
