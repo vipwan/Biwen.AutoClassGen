@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net7.0</TargetFrameworks>
-		<PackageVersion>1.2.0.0</PackageVersion>
+		<PackageVersion>1.2.1.0</PackageVersion>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<Authors>万雅虎</Authors>
 		<RepositoryUrl>https://github.com/vipwan/Biwen.AutoClassGen</RepositoryUrl>
@@ -10,8 +10,8 @@
 		<Description>Biwen.AutoClassGen</Description>
 		<Copyright>MIT</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
-		<PackageReleaseNotes>SG</PackageReleaseNotes>
+		<PackageTags>Roslyn,SourceGenerator,DTO,Mapper,Decorator,QuickApi</PackageTags>
+		<PackageReleaseNotes>提供装配器模型的自动生成</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1573,1591,1712</NoWarn>
 		<Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -26,7 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)'=='Release'">
-		<PackageReference Include="Biwen.AutoClassGen" Version="1.2.0.0" PrivateAssets="contentfiles;analyzers" />
+		<PackageReference Include="Biwen.AutoClassGen" Version="1.2.1.0" PrivateAssets="contentfiles;analyzers" />
 	</ItemGroup>
 
 	<ItemGroup>
