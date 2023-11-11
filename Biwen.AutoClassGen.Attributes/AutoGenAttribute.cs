@@ -1,7 +1,6 @@
-﻿using System;
-
-namespace Biwen.AutoClassGen.Attributes
+﻿namespace Biwen.AutoClassGen.Attributes
 {
+    using System;
 
     /// <summary>
     ///  Indicates that the class should be auto generated.

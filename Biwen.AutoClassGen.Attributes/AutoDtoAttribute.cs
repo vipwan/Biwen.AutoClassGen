@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace Biwen.AutoClassGen.Attributes
+﻿namespace Biwen.AutoClassGen.Attributes
 {
+    using System;
+
     /// <summary>
     /// 自动创建Dto
     /// </summary>
