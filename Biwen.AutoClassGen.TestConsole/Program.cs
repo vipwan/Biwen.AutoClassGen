@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder();
 builder.Services.AddScoped<IHelloService, HelloService>();
 builder.Services.AddScoped<ClassService>();
 
+//builder.Services.TryDecorate<IHelloService, HelloServiceDecor2>();
+
+
 // add auto decor
 builder.Services.AddAutoDecor();
 

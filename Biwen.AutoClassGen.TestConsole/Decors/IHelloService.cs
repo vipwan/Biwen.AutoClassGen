@@ -1,8 +1,8 @@
 ﻿namespace Biwen.AutoClassGen.TestConsole.Decors
 {
 
-    [AutoDecor(typeof(HelloServiceDecor2))]
-    [AutoDecor<HelloServiceDecor1>]
+    [AutoDecor(typeof(HelloServiceDecor1))]
+    [AutoDecor<HelloServiceDecor2>]
     public partial interface IHelloService
     {
         string SayHello(string name);
@@ -33,6 +33,9 @@
         }
     }
 
+    /// <summary>
+    /// decor for ClassService
+    /// </summary>
     public class ClassServiceDecor : ClassService
     {
         private readonly ClassService _helloService;
@@ -48,7 +51,7 @@
         {
             Console.WriteLine($"Hello {name} from ClassServiceDecor");
             var result = _helloService.SayHello(name);
-            _logger.LogInformation($"Hello {result} from ClassServiceDecor");
+            _logger.LogInformation("Hello {result} from ClassServiceDecor", result);
             return result;
 
         }
@@ -56,7 +59,7 @@
 
 
     /// <summary>
-    /// decor IHelloService
+    /// decor for IHelloService
     /// </summary>
     public class HelloServiceDecor1 : IHelloService
     {
@@ -76,13 +79,13 @@
             Console.WriteLine($"Hello {name} from HelloServiceDecor1");
             var result= _helloService.SayHello(name);
 
-            _logger.LogInformation($"Hello {result} from HelloServiceDecor1");
+            _logger.LogInformation("Hello {result} from HelloServiceDecor1", result);
 
             return result;
         }
     }
     /// <summary>
-    /// decor IHelloService 2
+    /// decor for IHelloService 2
     /// </summary>
     public class HelloServiceDecor2 : IHelloService
     {
@@ -97,9 +100,9 @@
 
         public string SayHello(string name)
         {
-            Console.WriteLine($"Hello {name} from HelloServiceDecor2");
+            Console.WriteLine("Hello {0} from HelloServiceDecor2",name);
             var result= _helloService.SayHello(name);
-            _logger.LogInformation($"Hello {result} from HelloServiceDecor2");
+            _logger.LogInformation("Hello {result} from HelloServiceDecor2", result);
             return result;
 
         }
