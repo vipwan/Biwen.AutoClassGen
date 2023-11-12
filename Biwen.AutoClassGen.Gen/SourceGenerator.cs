@@ -625,7 +625,7 @@ namespace Biwen.AutoClassGen
 
         private static void HandleAnnotatedNodesDecor(Compilation compilation, ImmutableArray<ISymbol> nodes, ImmutableArray<ISymbol> nodes2, SourceProductionContext context)
         {
-            if (nodes.Length == 0) return;
+            if ((nodes.Length + nodes2.Length) == 0) return;
 
             IList<KeyValuePair<string, string>> ofImpls = [];
             // (普通特性)获取所有实现类
