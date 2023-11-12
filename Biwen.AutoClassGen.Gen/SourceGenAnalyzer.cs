@@ -56,6 +56,7 @@
                     {
                         foreach (var attr in declaration.AttributeLists.AsEnumerable())
                         {
+                            // autoGen
                             if (attr.Attributes.Any(x => x.Name.ToString() == AttributeValueMetadataName))
                             {
                                 if (declaration.BaseList == null || !declaration.BaseList.Types.Any())
@@ -94,7 +95,55 @@
                                     ctx.ReportDiagnostic(Diagnostic.Create(Desc.SuggestDeclareNameWarning, location));
                                 }
                             }
+
+                            // decor
+                            if (attr.Attributes.Where(x => x.Name.ToString().IndexOf(
+                                AttributeValueMetadataNameDecor, StringComparison.Ordinal) == 0).Any())
+                            {
+                                foreach (var at in attr.Attributes)
+                                {
+                                    if (at.ArgumentList != null && at.ArgumentList.Arguments.Any())
+                                    {
+                                        var arg0 = at.ArgumentList.Arguments[0];
+                                        if (arg0.Expression is TypeOfExpressionSyntax express)
+                                        {
+                                            var implNameStr = express.Type.ToString();
+                                            var symbol = ctx.Compilation.GetSymbolsWithName(implNameStr, SymbolFilter.Type);
+                                            if (symbol.Any())
+                                            {
+                                                var implName = symbol.First();
+                                                //IHelloService
+                                                var interfaceName = declaration.Identifier.ValueText;
+
+                                                if ((implName.OriginalDefinition as INamedTypeSymbol)?.AllInterfaces.Any(x => x.Name == interfaceName) is not true)
+                                                {
+                                                    var location = at?.GetLocation();
+                                                    // issue error
+                                                    ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAutoDecorError, location));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (at?.Name is GenericNameSyntax genericNameSyntax)
+                                    {
+                                        var implNameStr = genericNameSyntax.TypeArgumentList.Arguments[0].ToString();
+                                        var symbol = ctx.Compilation.GetSymbolsWithName(genericNameSyntax.TypeArgumentList.Arguments[0].ToString(), SymbolFilter.Type);
+                                        if (symbol.Any())
+                                        {
+                                            var implName = symbol.First();
+                                            var interfaceName = declaration.Identifier.ValueText;
+                                            if ((implName.OriginalDefinition as INamedTypeSymbol)?.AllInterfaces.Any(x => x.Name == interfaceName) is not true)
+                                            {
+                                                var location = at?.GetLocation();
+                                                // issue error
+                                                ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAutoDecorError, location));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
+
                     }
                     // suggest
                     if (declaration.BaseList != null && declaration.BaseList.Types.Any(x => x.IsKind(SyntaxKind.SimpleBaseType)))
@@ -155,14 +204,14 @@
                                                 if (declaration.BaseList?.Types.Any(x => x.Type.ToString() == implName.Name) is not true
                                                 && declaration.Identifier.Text != (implName as ITypeSymbol)?.BaseType?.Name)
                                                 {
-                                                    var location = arg0?.GetLocation();
+                                                    var location = at?.GetLocation();
                                                     // issue error
                                                     ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAutoDecorError, location));
                                                 }
                                             }
                                         }
                                     }
-                                    if (at.Name is GenericNameSyntax genericNameSyntax)
+                                    if (at?.Name is GenericNameSyntax genericNameSyntax)
                                     {
                                         var implNameStr = genericNameSyntax.TypeArgumentList.Arguments[0].ToString();
                                         var symbol = ctx.Compilation.GetSymbolsWithName(genericNameSyntax.TypeArgumentList.Arguments[0].ToString(), SymbolFilter.Type);
