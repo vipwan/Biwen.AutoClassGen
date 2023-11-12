@@ -8,15 +8,25 @@ var builder = WebApplication.CreateBuilder();
 
 
 builder.Services.AddScoped<IHelloService, HelloService>();
-builder.Services.AddScoped<HelloService>();
+builder.Services.AddScoped<ClassService>();
 
-//add auto decor
+// add auto decor
 builder.Services.AddAutoDecor();
 
-
-
-
 var app = builder.Build();
+
+
+using var scope = app.Services.CreateScope();
+// get IHelloService
+var svc = scope.ServiceProvider.GetRequiredService<IHelloService>();
+var result1 = svc.SayHello("IHelloService");
+Console.WriteLine(result1);
+
+// get ClassService
+var svc2 = scope.ServiceProvider.GetRequiredService<ClassService>();
+var result2 = svc2.SayHello("ClassService");
+Console.WriteLine(result2);
+
 
 Biwen.AutoClassGen.Models.QueryRequest queryRequest = new()
 {
@@ -45,12 +55,12 @@ var user = new User
     Remark = "this is a test",
 };
 
-//mapper to UserDto
+// mapper to UserDto
 var userDto = user.MapperToUserDto();
-//mapper to User2Dto
+// mapper to User2Dto
 var user2Dto = user.MapperToUser2Dto();
 
-//from [AutoDto<T>(params string?[])]
+// from [AutoDto<T>(params string?[])]
 var user3Dto = user.MapperToUser3Dto();
 
 

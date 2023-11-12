@@ -20,15 +20,49 @@
         string SayHello(string name);
     }
 
-    /// <summary>
-    /// implement IHelloService
-    /// </summary>
-    [AutoDecor<HelloServiceDecor1>]
     public class HelloService : IHelloService
     {
         public string SayHello(string name)
         {
             return $"Hello {name}";
+        }
+    }
+
+    /// <summary>
+    /// ClassService
+    /// </summary>
+    [AutoDecor<ClassServiceDecor>]
+    public class ClassService
+    {
+        /// <summary>
+        /// 请注意，如果TService是一个类,而不是interface,这里的virtual关键字是必须的
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public virtual string SayHello(string name)
+        {
+            return $"Hello {name}";
+        }
+    }
+
+    public class ClassServiceDecor : ClassService
+    {
+        private readonly ClassService _helloService;
+        private readonly ILogger<ClassServiceDecor> _logger;
+
+        public ClassServiceDecor(ClassService helloService, ILogger<ClassServiceDecor> logger)
+        {
+            _helloService = helloService;
+            _logger = logger;
+        }
+
+        public override string SayHello(string name)
+        {
+            Console.WriteLine($"Hello {name} from ClassServiceDecor");
+            var result = _helloService.SayHello(name);
+            _logger.LogInformation($"Hello {result} from ClassServiceDecor");
+            return result;
+
         }
     }
 
@@ -92,7 +126,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             services.Decorate<TestConsole.Decors.IHelloService, TestConsole.Decors.HelloServiceDecor1>();
             services.Decorate<TestConsole.Decors.IHelloService, TestConsole.Decors.HelloServiceDecor2>();
-            services.Decorate<TestConsole.Decors.HelloService, TestConsole.Decors.HelloServiceDecor1>();
+            services.Decorate<TestConsole.Decors.ClassService, TestConsole.Decors.ClassServiceDecor>();
             return services;
         }
     }
@@ -106,10 +140,16 @@ namespace Microsoft.Extensions.DependencyInjection
 
 // add services
 builder.Services.AddScoped<IHelloService, HelloService>();
-builder.Services.AddScoped<HelloService>();
+builder.Services.AddScoped<ClassService>();
 
 // add auto decor
 builder.Services.AddAutoDecor();
+
+// get service
+
+var helloService = builder.Services.GetRequiredService<IHelloService>();
+var classService = builder.Services.GetRequiredService<ClassService>();
+
 
 ```
 
