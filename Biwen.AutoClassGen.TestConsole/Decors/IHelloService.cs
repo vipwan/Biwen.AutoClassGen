@@ -3,7 +3,7 @@
 
     [AutoDecor(typeof(HelloServiceDecor2))]
     [AutoDecor<HelloServiceDecor1>]
-    public interface IHelloService
+    public partial interface IHelloService
     {
         string SayHello(string name);
     }
@@ -20,7 +20,7 @@
     /// ClassService
     /// </summary>
     [AutoDecor<ClassServiceDecor>]
-    public class ClassService
+    public partial class ClassService
     {
         /// <summary>
         /// 请注意，如果TService是一个类,而不是interface,这里的virtual关键字是必须的
