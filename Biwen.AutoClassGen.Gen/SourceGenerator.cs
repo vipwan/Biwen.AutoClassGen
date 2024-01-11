@@ -249,7 +249,7 @@ namespace Biwen.AutoClassGen
                     bodyBuilder.AppendLine(rawClass);
 
                     string rawNamespace = string.Empty;
-                    namespaces.ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
+                    namespaces.ForEach(ns => rawNamespace += $"using {ns};\r\n");
 
                     var source = sb.ToString();
                     source = source.Replace("$namespace", rawNamespace);
@@ -423,7 +423,7 @@ namespace Biwen.AutoClassGen
                     bodyBuilder.AppendLine(rawClass);
 
                     string rawNamespace = string.Empty;
-                    namespaces.ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
+                    namespaces.ForEach(ns => rawNamespace += $"using {ns};\r\n");
 
                     var source = sb.ToString();
                     source = source.Replace("$namespace", rawNamespace);
@@ -595,7 +595,7 @@ namespace Biwen.AutoClassGen
                     bodyBuilder.AppendLine(rawClass);
 
                     string rawNamespace = string.Empty;
-                    namespaces.ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
+                    namespaces.ForEach(ns => rawNamespace += $"using {ns};\r\n");
 
                     var source = sb.ToString();
                     source = source.Replace("$namespace", rawNamespace);
