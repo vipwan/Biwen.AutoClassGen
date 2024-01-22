@@ -22,10 +22,16 @@
     /// <summary>
     /// another way to be generated
     /// </summary>
-    [AutoDto<User>(nameof(User.Email), "TestCol")]
-    //[AutoDto(typeof(User), nameof(User.Email))]
+    //[AutoDto<User>]
+    [AutoDto(typeof(User), nameof(User.Email))]
     public partial class User3Dto
     {
+    }
+
+    [AutoDto<Venue>]
+    public partial class VenueDto
+    {
+
     }
 }
 

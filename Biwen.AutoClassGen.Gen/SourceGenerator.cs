@@ -522,18 +522,22 @@ namespace Biwen.AutoClassGen
                 {
                     // 排除的属性
                     List<string> excapes = [];
-                    for (var i = 0; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
+
+                    if (attributeSyntax.ArgumentList != null)
                     {
-                        var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
-                        if (expressionSyntax.IsKind(SyntaxKind.InvocationExpression))
+                        for (var i = 0; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
                         {
-                            var name = (expressionSyntax as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
-                            excapes.Add(name.Split(['.']).Last());
-                        }
-                        else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
-                        {
-                            var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
-                            excapes.Add(name);
+                            var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
+                            if (expressionSyntax.IsKind(SyntaxKind.InvocationExpression))
+                            {
+                                var name = (expressionSyntax as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
+                                excapes.Add(name.Split(['.']).Last());
+                            }
+                            else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
+                            {
+                                var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
+                                excapes.Add(name);
+                            }
                         }
                     }
 
@@ -570,7 +574,11 @@ namespace Biwen.AutoClassGen
                                     bodyInnerBuilder.AppendLine($"{raw}");
 
                                     // mapper:
-                                    mapperBodyBuilder.AppendLine($"{prop.Name} = model.{prop.Name},");
+                                    // 只有public的属性才能赋值
+                                    if (prop.GetMethod?.DeclaredAccessibility == Accessibility.Public)
+                                    {
+                                        mapperBodyBuilder.AppendLine($"{prop.Name} = model.{prop.Name},");
+                                    }
                                 }
                             });
                         }

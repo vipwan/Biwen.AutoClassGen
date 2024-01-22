@@ -67,10 +67,26 @@ var user2Dto = user.MapperToUser2Dto();
 var user3Dto = user.MapperToUser3Dto();
 
 
+var venue = new Venue
+{
+    Address = "No1 street",
+    BusinessId = "123456",
+    Images = [new VenueImage { OrderId = 1234, Url = "img1" }],
+    Name = "test"
+};
+
+var venuesDto = venue.MapperToVenueDto();
+
+
+
 Console.WriteLine($"{queryRequest.KeyWord}");
 Console.WriteLine($"I`m {nameof(userDto)} {userDto.FirstName} {userDto.LastName} I`m {userDto.Age} years old");
 Console.WriteLine($"I`m {nameof(user2Dto)} {user2Dto.FirstName} {user2Dto.LastName} I`m {user2Dto.Age} years old");
 Console.WriteLine($"I`m {nameof(user3Dto)} {user3Dto.FirstName} {user3Dto.LastName} I`m {user3Dto.Age} years old");
+
+
+Console.WriteLine($"I`m {nameof(venuesDto)} {venuesDto.Name} {venuesDto.Address} I have {venuesDto.Images?.Count} images");
+
 
 
 
