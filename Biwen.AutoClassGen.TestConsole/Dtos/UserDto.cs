@@ -28,12 +28,20 @@
     {
     }
 
-    [AutoDto<Venue>]
-    public partial class VenueDto
+
+    [AutoDto<VenueImage>]
+    public partial class VenueImageDto
     {
 
     }
+
+    [AutoDto<Venue>(nameof(Venue.Images))]
+    public partial class VenueDto
+    {
+        public IList<VenueImageDto>? Images { get; set; }
+    }
 }
+
 
 namespace Biwen.AutoClassGen.TestConsole.Entitys
 {
