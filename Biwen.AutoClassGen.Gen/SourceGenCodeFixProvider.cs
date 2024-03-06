@@ -31,11 +31,13 @@ namespace Biwen.AutoClassGen
         /// <summary>
         /// FixableDiagnosticIds.
         /// </summary>
-        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
+        public override ImmutableArray<string> FixableDiagnosticIds =>
+        [
             Desc.GEN001,
             Desc.GEN011,
             Desc.GEN021,
-            Desc.GEN031);
+            Desc.GEN031
+        ];
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
@@ -65,7 +67,7 @@ namespace Biwen.AutoClassGen
                     var @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.NamespaceDeclaration)).FirstOrDefault() as NamespaceDeclarationSyntax)?.Name.ToString();
                     if (string.IsNullOrEmpty(@namespace))
                     {
-                         @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault() as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
+                        @namespace = (rootCompUnit.Members.Where(m => m.IsKind(SyntaxKind.FileScopedNamespaceDeclaration)).FirstOrDefault() as FileScopedNamespaceDeclarationSyntax)?.Name.ToString();
                     }
 
                     if (!string.IsNullOrEmpty(@namespace))

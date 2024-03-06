@@ -18,9 +18,7 @@
     /// Auto Decoration Attribute
     /// </summary>
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-#pragma warning disable SA1402 // File may only contain a single type
     public class AutoDecorAttribute<T> : AutoDecorAttribute where T : class
-#pragma warning restore SA1402 // File may only contain a single type
     {
         public AutoDecorAttribute() : base(typeof(T))
         {

@@ -29,7 +29,7 @@ namespace Biwen.AutoClassGen
         /// <summary>
         /// 泛型AutoDtoAttribute
         /// </summary>
-        private const string AttributeMetadataNameDtoG = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute`1";
+        private const string GenericAutoDtoAttributeName = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute`1";
 
 
         private const string AttributeMetadataNameDecor = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute";
@@ -38,7 +38,7 @@ namespace Biwen.AutoClassGen
         /// <summary>
         /// 泛型AutoDecorAttribute
         /// </summary>
-        private const string AttributeMetadataNameDecorG = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute`1";
+        private const string GenericAutoDecorAttributeName = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute`1";
 
 
 
@@ -79,14 +79,14 @@ namespace Biwen.AutoClassGen
             #region AutoDtoAttributeG
 
             var nodesDtoG = context.SyntaxProvider.ForAttributeWithMetadataName(
-                AttributeMetadataNameDtoG,
+                GenericAutoDtoAttributeName,
                 (context, attributeSyntax) => true,
                 (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesDtoG =
                 context.CompilationProvider.Combine(nodesDtoG);
 
-            context.RegisterSourceOutput(compilationAndTypesDtoG, static (spc, source) => HandleAnnotatedNodesDtoG(source.Item1, source.Item2, spc));
+            context.RegisterSourceOutput(compilationAndTypesDtoG, static (spc, source) => HandleGenericAnnotatedNodesDto(source.Item1, source.Item2, spc));
 
             #endregion
 
@@ -99,7 +99,7 @@ namespace Biwen.AutoClassGen
                                (syntaxContext, _) => syntaxContext.TargetSymbol).Collect();
 
             var nodesDecorG = context.SyntaxProvider.ForAttributeWithMetadataName(
-                   AttributeMetadataNameDecorG,
+                   GenericAutoDecorAttributeName,
                    (context, attributeSyntax) => true,
                    (syntaxContext, _) => syntaxContext.TargetSymbol).Collect();
 
@@ -457,7 +457,7 @@ namespace Biwen.AutoClassGen
         /// <param name="compilation"></param>
         /// <param name="nodes"></param>
         /// <param name="context"></param>
-        private static void HandleAnnotatedNodesDtoG(Compilation compilation, ImmutableArray<SyntaxNode> nodes, SourceProductionContext context)
+        private static void HandleGenericAnnotatedNodesDto(Compilation compilation, ImmutableArray<SyntaxNode> nodes, SourceProductionContext context)
         {
             if (nodes.Length == 0) return;
 

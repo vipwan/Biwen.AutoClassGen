@@ -15,14 +15,16 @@
     public class SourceGenAnalyzer : DiagnosticAnalyzer
     {
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        [
             Desc.InvalidDeclareError,
             Desc.InvalidDeclareNameError,
             Desc.SuggestDeclareNameWarning,
             Desc.SuggestAutoGen,
             Desc.MutiMarkedAutoDtoError,
             Desc.MarkedAbstractAutoDtoError,
-            Desc.MarkedAutoDecorError);
+            Desc.MarkedAutoDecorError,
+        ];
 
         private const string AttributeValueMetadataName = "AutoGen";
         /// <summary>

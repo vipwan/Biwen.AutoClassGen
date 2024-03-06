@@ -28,9 +28,7 @@
     /// 自动创建Dto
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-#pragma warning disable SA1402 // File may only contain a single type
     public class AutoDtoAttribute<T> : AutoDtoAttribute where T : class
-#pragma warning restore SA1402 // File may only contain a single type
     {
         public AutoDtoAttribute(params string[] ignoredProperties) : base(typeof(T), ignoredProperties)
         {

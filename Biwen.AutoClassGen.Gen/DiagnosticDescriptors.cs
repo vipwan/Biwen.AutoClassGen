@@ -1,7 +1,7 @@
-﻿using Microsoft.CodeAnalysis;
-
-namespace Biwen.AutoClassGen
+﻿namespace Biwen.AutoClassGen
 {
+    using Microsoft.CodeAnalysis;
+
     internal class DiagnosticDescriptors
     {
 

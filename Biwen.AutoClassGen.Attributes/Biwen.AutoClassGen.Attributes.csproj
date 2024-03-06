@@ -13,7 +13,7 @@
 		<PackageTags>Roslyn,SourceGenerator,DTO,Mapper,Decorator,QuickApi</PackageTags>
 		<PackageReleaseNotes>提供装配器模型的自动生成</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn>1573,1591,1712</NoWarn>
+		<NoWarn>SA1402,1573,1591,1712</NoWarn>
 		<Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
 	</PropertyGroup>
 
