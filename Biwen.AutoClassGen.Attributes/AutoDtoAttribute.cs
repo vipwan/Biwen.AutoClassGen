@@ -13,12 +13,12 @@
         /// </summary>
         public Type FromType { get; private set; }
 
-        public string[] ExcludeProps { get; private set; }
+        public string[] IgnoredProperties { get; private set; }
 
-        public AutoDtoAttribute(Type fromType, params string[] excludeProps)
+        public AutoDtoAttribute(Type fromType, params string[] ignoredProperties)
         {
             FromType = fromType;
-            ExcludeProps = excludeProps;
+            IgnoredProperties = ignoredProperties;
         }
     }
 
@@ -32,7 +32,7 @@
     public class AutoDtoAttribute<T> : AutoDtoAttribute where T : class
 #pragma warning restore SA1402 // File may only contain a single type
     {
-        public AutoDtoAttribute(params string[] excludeProps) : base(typeof(T), excludeProps)
+        public AutoDtoAttribute(params string[] ignoredProperties) : base(typeof(T), ignoredProperties)
         {
         }
     }

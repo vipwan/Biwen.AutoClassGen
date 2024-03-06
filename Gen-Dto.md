@@ -2,10 +2,10 @@
 
 ```c#
 //netstandard2.0 +
-[AutoDto(Type entityType ,params string[] escapeCols)]
+[AutoDto(Type entityType ,params string[] ignoredProperties)]
 
 //C#11(NET7+) support generic attribute
-[AutoDto<T>(params string[] escapeCols)]
+[AutoDto<T>(params string[] ignoredProperties)]
 
 ```
 
