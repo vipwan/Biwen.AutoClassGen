@@ -16,6 +16,10 @@ builder.Services.AddScoped<ClassService>();
 // add auto decor
 builder.Services.AddAutoDecor();
 
+
+builder.Services.AddAutoInject();
+
+
 var app = builder.Build();
 
 
