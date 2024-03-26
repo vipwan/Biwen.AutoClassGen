@@ -8,6 +8,7 @@ For example, the multi-tenant Id, the number of pages, and these attribute field
 If all this code needs to be written, it will add a lot of work, so Biwen.AutoClassGen came into being to solve this pain point...
 - In many cases, we will have a lot of DTO objects,
 - AOP & Decorator
+- Auto Inject
 
 
 [中文](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
