@@ -10,7 +10,6 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 - AOP & Decorator
 
 
-
 [中文](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
 
 ### Usage
@@ -22,6 +21,7 @@ dotnet add package Biwen.AutoClassGen.Attributes
 - [Gen DTO Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Dto.md)
 - [Gen Request Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-request.md)
 - [Gen Decoration Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Decor.md)
+- [Gen AutoInject Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-AutoInject.md)
 
 ### Used by
 #### if you use this library, please tell me, I will add your project here.

@@ -2,6 +2,7 @@
 using Biwen.AutoClassGen.TestConsole.Decors;
 using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
+using Biwen.AutoClassGen.TestConsole.Services;
 
 
 var builder = WebApplication.CreateBuilder();
@@ -16,7 +17,7 @@ builder.Services.AddScoped<ClassService>();
 // add auto decor
 builder.Services.AddAutoDecor();
 
-
+// add auto inject
 builder.Services.AddAutoInject();
 
 
@@ -33,6 +34,14 @@ Console.WriteLine(result1);
 var svc2 = scope.ServiceProvider.GetRequiredService<ClassService>();
 var result2 = svc2.SayHello("ClassService");
 Console.WriteLine(result2);
+
+
+// get auto inject svc
+var svcInject = scope.ServiceProvider.GetRequiredService<ITest2Service>();
+var result3 = svcInject.Say2("from auto inject");
+Console.WriteLine(result3);
+
+
 
 
 Biwen.AutoClassGen.Models.QueryRequest queryRequest = new()
