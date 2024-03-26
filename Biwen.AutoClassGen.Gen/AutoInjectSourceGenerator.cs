@@ -23,13 +23,13 @@ namespace Biwen.AutoClassGen
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var nodesDtoG = context.SyntaxProvider.ForAttributeWithMetadataName(
+            var nodesAutoInjectG = context.SyntaxProvider.ForAttributeWithMetadataName(
     GenericAutoInjectAttributeName,
     (context, attributeSyntax) => true,
     (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectG =
-                context.CompilationProvider.Combine(nodesDtoG);
+                context.CompilationProvider.Combine(nodesAutoInjectG);
 
             context.RegisterSourceOutput(compilationAndTypesInjectG, static (spc, source) => HandleGenericAnnotatedNodesInject(source.Item1, source.Item2, spc));
         }
@@ -43,7 +43,6 @@ namespace Biwen.AutoClassGen
         private static void HandleGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes, SourceProductionContext context)
         {
             if (nodes.Length == 0) return;
-
             // 注册的服务
             List<AutoInjectDefine> autoInjects = [];
             List<string> namespaces = [];
@@ -54,7 +53,6 @@ namespace Biwen.AutoClassGen
                 foreach (var attr in node.AttributeLists.AsEnumerable())
                 {
                     var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-
                     attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0);
 
                     if (attrName?.IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0)
@@ -87,7 +85,7 @@ namespace Biwen.AutoClassGen
                             }
                         }
 
-                        string lifeTime = "AddScoped";
+                        string lifeTime = "AddScoped"; //default
                         {
                             if (attributeSyntax.ArgumentList != null)
                             {

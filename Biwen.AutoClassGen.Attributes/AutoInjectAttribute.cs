@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace Biwen.AutoClassGen.Attributes
+﻿namespace Biwen.AutoClassGen.Attributes
 {
+    using System;
+
 #if NET7_0_OR_GREATER
 
     /// <summary>
