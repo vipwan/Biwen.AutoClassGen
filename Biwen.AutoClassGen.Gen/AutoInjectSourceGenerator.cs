@@ -20,9 +20,31 @@ namespace Biwen.AutoClassGen
         /// </summary>
         private const string GenericAutoInjectAttributeName = "Biwen.AutoClassGen.Attributes.AutoInjectAttribute`1";
 
+        /// <summary>
+        /// 非泛型AutoInjectAttribute
+        /// </summary>
+        private const string AutoInjectAttributeName = "Biwen.AutoClassGen.Attributes.AutoInjectAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
+            #region 非泛型
+
+            var nodesAutoInject = context.SyntaxProvider.ForAttributeWithMetadataName(
+                AutoInjectAttributeName,
+                (context, attributeSyntax) => true,
+                (syntaxContext, _) => syntaxContext.TargetNode).Collect();
+
+            IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInject =
+                context.CompilationProvider.Combine(nodesAutoInject);
+
+            lock (_lock)
+            {
+                context.RegisterSourceOutput(compilationAndTypesInject, static (spc, source) => GetAnnotatedNodesInject(source.Item1, source.Item2));
+            }
+            #endregion
+
+            #region 泛型
+
             var nodesAutoInjectG = context.SyntaxProvider.ForAttributeWithMetadataName(
     GenericAutoInjectAttributeName,
     (context, attributeSyntax) => true,
@@ -31,16 +53,23 @@ namespace Biwen.AutoClassGen
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectG =
                 context.CompilationProvider.Combine(nodesAutoInjectG);
 
-            context.RegisterSourceOutput(compilationAndTypesInjectG, static (spc, source) => HandleGenericAnnotatedNodesInject(source.Item1, source.Item2, spc));
+            lock (_lock)
+            {
+                context.RegisterSourceOutput(compilationAndTypesInjectG, static (spc, source) => GetGenericAnnotatedNodesInject(source.Item1, source.Item2));
+            }
+            #endregion
+
+            lock (_lock)
+
+                context.RegisterSourceOutput(compilationAndTypesInjectG, static (spc, source) => GenSource(spc));
         }
 
         /// <summary>
-        /// Gen AutoInjectAttribute G
+        /// Get AutoInjectAttribute G
         /// </summary>
         /// <param name="compilation"></param>
         /// <param name="nodes"></param>
-        /// <param name="context"></param>
-        private static void HandleGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes, SourceProductionContext context)
+        private static void GetGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
         {
             if (nodes.Length == 0) return;
             // 注册的服务
@@ -130,9 +159,146 @@ namespace Biwen.AutoClassGen
                 }
             }
 
+            _injectDefines.AddRange(autoInjects);
+            _namespaces.AddRange(namespaces);
+        }
+
+        /// <summary>
+        /// Get AutoInjectAttribute
+        /// </summary>
+        /// <param name="compilation"></param>
+        /// <param name="nodes"></param>
+        private static void GetAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+        {
+            if (nodes.Length == 0) return;
+            // 注册的服务
+            List<AutoInjectDefine> autoInjects = [];
+            List<string> namespaces = [];
+
+            foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
+            {
+                AttributeSyntax? attributeSyntax = null;
+                foreach (var attr in node.AttributeLists.AsEnumerable())
+                {
+                    var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
+                    attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0);
+
+                    if (attrName?.IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0)
+                    {
+                        var implTypeName = node.Identifier.ValueText;
+                        var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
+
+                        var symbols = compilation.GetSymbolsWithName(implTypeName);
+                        foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
+                        {
+                            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
+                            // 命名空间
+                            if (!namespaces.Contains(fullNameSpace))
+                            {
+                                namespaces.Add(fullNameSpace);
+                            }
+                        }
+
+                        //转译的Entity类名
+                        var baseTypeName = string.Empty;
+
+                        if (attributeSyntax.ArgumentList == null || attributeSyntax.ArgumentList!.Arguments.Count == 0)
+                        {
+                            baseTypeName = implTypeName;
+                        }
+                        else
+                        {
+                            if (attributeSyntax.ArgumentList!.Arguments[0].Expression is TypeOfExpressionSyntax)
+                            {
+                                var eType = (attributeSyntax.ArgumentList!.Arguments[0].Expression as TypeOfExpressionSyntax)!.Type;
+                                if (eType.IsKind(SyntaxKind.IdentifierName))
+                                {
+                                    baseTypeName = (eType as IdentifierNameSyntax)!.Identifier.ValueText;
+                                }
+                                else if (eType.IsKind(SyntaxKind.QualifiedName))
+                                {
+                                    baseTypeName = (eType as QualifiedNameSyntax)!.ToString().Split(['.']).Last();
+                                }
+                                else if (eType.IsKind(SyntaxKind.AliasQualifiedName))
+                                {
+                                    baseTypeName = (eType as AliasQualifiedNameSyntax)!.ToString().Split(['.']).Last();
+                                }
+                                if (string.IsNullOrEmpty(baseTypeName))
+                                {
+                                    baseTypeName = implTypeName;
+                                }
+                            }
+                            else
+                            {
+                                baseTypeName = implTypeName;
+                            }
+                        }
+
+                        string lifeTime = "AddScoped"; //default
+                        {
+                            if (attributeSyntax.ArgumentList != null)
+                            {
+                                for (var i = 0; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
+                                {
+                                    var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
+                                    if (expressionSyntax.IsKind(SyntaxKind.SimpleMemberAccessExpression))
+                                    {
+                                        var name = (expressionSyntax as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText;
+                                        lifeTime = name switch
+                                        {
+                                            "Singleton" => "AddSingleton",
+                                            "Transient" => "AddTransient",
+                                            "Scoped" => "AddScoped",
+                                            _ => "AddScoped",
+                                        };
+                                        break;
+                                    }
+                                }
+                            }
+
+                            autoInjects.Add(new AutoInjectDefine
+                            {
+                                ImplType = implTypeName,
+                                BaseType = baseTypeName,
+                                LifeTime = lifeTime,
+                            });
+
+                            //命名空间
+                            symbols = compilation.GetSymbolsWithName(baseTypeName);
+                            foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
+                            {
+                                var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
+                                // 命名空间
+                                if (!namespaces.Contains(fullNameSpace))
+                                {
+                                    namespaces.Add(fullNameSpace);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            _injectDefines.AddRange(autoInjects);
+            _namespaces.AddRange(namespaces);
+
+        }
+
+
+        private static readonly object _lock = new();
+
+        /// <summary>
+        /// 所有的注入定义
+        /// </summary>
+        private static List<AutoInjectDefine> _injectDefines = [];
+        private static List<string> _namespaces = [];
+
+
+        private static void GenSource(SourceProductionContext context)
+        {
             // 生成代码
             StringBuilder classes = new();
-            foreach (var define in autoInjects)
+            foreach (var define in _injectDefines)
             {
                 if (define.ImplType != define.BaseType)
                 {
@@ -145,13 +311,14 @@ namespace Biwen.AutoClassGen
             }
 
             string rawNamespace = string.Empty;
-            namespaces.ForEach(ns => rawNamespace += $"using {ns};\r\n");
+            _namespaces.Distinct().ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
 
             var envSource = Template.Replace("$services", classes.ToString());
             envSource = envSource.Replace("$namespaces", rawNamespace);
             // format:
             envSource = FormatContent(envSource);
-            context.AddSource($"Biwen.AutoClassGenInjectG.g.cs", SourceText.From(envSource, Encoding.UTF8));
+            context.AddSource($"Biwen.AutoClassGenInject.g.cs", SourceText.From(envSource, Encoding.UTF8));
+
         }
 
         private class AutoInjectDefine

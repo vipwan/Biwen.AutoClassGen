@@ -13,9 +13,10 @@
         string Say2(string message);
     }
 
+
     [AutoInject<TestService>]
     [AutoInject<ITestService>(ServiceLifetime.Singleton)]
-    //[AutoInject<ITest2Service>(ServiceLifetime.Scoped)]
+    [AutoInject<ITest2Service>(ServiceLifetime.Scoped)]
     public class TestService : ITestService, ITest2Service
     {
         public string Say(string message)
@@ -30,7 +31,9 @@
     }
 
 
-    [AutoInject<ITest2Service>]
+    [AutoInject]
+    [AutoInject(serviceLifetime: ServiceLifetime.Transient)]
+    [AutoInject(typeof(ITest2Service), ServiceLifetime.Scoped)]
     public class TestService2 : ITest2Service
     {
         public string Say2(string message)
