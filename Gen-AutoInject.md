@@ -5,6 +5,10 @@
 //C#11(NET7+) support generic attribute
 [AutoDto<T>(ServiceLifetime.Scoped)]
 
+[AutoInject]
+[AutoInject(serviceLifetime: ServiceLifetime.Transient)]
+[AutoInject(typeof(ITest2Service), ServiceLifetime.Scoped)]
+
 ```
 
 ### Your Service
