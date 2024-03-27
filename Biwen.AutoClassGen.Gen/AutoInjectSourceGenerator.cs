@@ -101,17 +101,19 @@ namespace Biwen.AutoClassGen
                         }
 
                         var implTypeName = node.Identifier.ValueText;
-                        var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
-
+                        //var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
                         var symbols = compilation.GetSymbolsWithName(implTypeName);
                         foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
                         {
-                            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
-                            // 命名空间
-                            if (!namespaces.Contains(fullNameSpace))
-                            {
-                                namespaces.Add(fullNameSpace);
-                            }
+                            implTypeName = symbol.ToDisplayString();
+                            break;
+                        }
+
+                        var baseSymbols = compilation.GetSymbolsWithName(baseTypeName);
+                        foreach (ITypeSymbol baseSymbol in baseSymbols.Cast<ITypeSymbol>())
+                        {
+                            baseTypeName = baseSymbol.ToDisplayString();
+                            break;
                         }
 
                         string lifeTime = "AddScoped"; //default
@@ -160,7 +162,7 @@ namespace Biwen.AutoClassGen
             }
 
             _injectDefines.AddRange(autoInjects);
-            _namespaces.AddRange(namespaces);
+            //_namespaces.AddRange(namespaces);
         }
 
         /// <summary>
@@ -186,17 +188,12 @@ namespace Biwen.AutoClassGen
                     if (attrName?.IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0)
                     {
                         var implTypeName = node.Identifier.ValueText;
-                        var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
-
+                        //var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
                         var symbols = compilation.GetSymbolsWithName(implTypeName);
                         foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
                         {
-                            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
-                            // 命名空间
-                            if (!namespaces.Contains(fullNameSpace))
-                            {
-                                namespaces.Add(fullNameSpace);
-                            }
+                            implTypeName = symbol.ToDisplayString();
+                            break;
                         }
 
                         //转译的Entity类名
@@ -234,6 +231,14 @@ namespace Biwen.AutoClassGen
                             }
                         }
 
+
+                        var baseSymbols = compilation.GetSymbolsWithName(baseTypeName);
+                        foreach (ITypeSymbol baseSymbol in baseSymbols.Cast<ITypeSymbol>())
+                        {
+                            baseTypeName = baseSymbol.ToDisplayString();
+                            break;
+                        }
+
                         string lifeTime = "AddScoped"; //default
                         {
                             if (attributeSyntax.ArgumentList != null)
@@ -280,7 +285,7 @@ namespace Biwen.AutoClassGen
             }
 
             _injectDefines.AddRange(autoInjects);
-            _namespaces.AddRange(namespaces);
+            //_namespaces.AddRange(namespaces);
 
         }
 
@@ -291,8 +296,7 @@ namespace Biwen.AutoClassGen
         /// 所有的注入定义
         /// </summary>
         private static List<AutoInjectDefine> _injectDefines = [];
-        private static List<string> _namespaces = [];
-
+        //private static List<string> _namespaces = [];
 
         private static void GenSource(SourceProductionContext context)
         {
@@ -311,8 +315,7 @@ namespace Biwen.AutoClassGen
             }
 
             string rawNamespace = string.Empty;
-            _namespaces.Distinct().ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
-
+            //_namespaces.Distinct().ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
             var envSource = Template.Replace("$services", classes.ToString());
             envSource = envSource.Replace("$namespaces", rawNamespace);
             // format:
