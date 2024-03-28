@@ -26,7 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)'=='Release'">
-		<PackageReference Include="Biwen.AutoClassGen" Version="1.3.2.1" PrivateAssets="contentfiles;analyzers" />
+		<PackageReference Include="Biwen.AutoClassGen" Version="1.3.2.2" PrivateAssets="contentfiles;analyzers" />
 	</ItemGroup>
 
 
