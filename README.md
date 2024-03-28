@@ -17,8 +17,8 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 
 ```bash
 dotnet add package Biwen.AutoClassGen.Attributes
+dotnet add package Biwen.AutoClassGen
 ```
-
 - [Gen DTO Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Dto.md)
 - [Gen Request Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-request.md)
 - [Gen Decoration Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Decor.md)
