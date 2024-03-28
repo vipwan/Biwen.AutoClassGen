@@ -1,9 +1,9 @@
-﻿namespace Biwen.AutoClassGen.TestConsole.Services;
+﻿namespace Biwen.AutoClassGen.TestConsole.Services2;
 
 /// <summary>
 /// 测试服务
 /// </summary>
-
+[AutoInject]
 [AutoInject]
 public class MyService
 {
@@ -14,4 +14,3 @@ public class MyService
         return str;
     }
 }
-

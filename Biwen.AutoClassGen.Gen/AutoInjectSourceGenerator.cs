@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Biwen.AutoClassGen
 {
@@ -37,10 +38,6 @@ namespace Biwen.AutoClassGen
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInject =
                 context.CompilationProvider.Combine(nodesAutoInject);
 
-            lock (_lock)
-            {
-                context.RegisterSourceOutput(compilationAndTypesInject, static (spc, source) => GetAnnotatedNodesInject(source.Item1, source.Item2));
-            }
             #endregion
 
             #region 泛型
@@ -53,15 +50,16 @@ namespace Biwen.AutoClassGen
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectG =
                 context.CompilationProvider.Combine(nodesAutoInjectG);
 
-            lock (_lock)
-            {
-                context.RegisterSourceOutput(compilationAndTypesInjectG, static (spc, source) => GetGenericAnnotatedNodesInject(source.Item1, source.Item2));
-            }
             #endregion
 
-            lock (_lock)
+            var join = compilationAndTypesInject.Combine(compilationAndTypesInjectG);
 
-                context.RegisterSourceOutput(compilationAndTypesInjectG, static (spc, source) => GenSource(spc));
+            context.RegisterSourceOutput(join, (ctx, nodes) =>
+            {
+                var nodes1 = GetAnnotatedNodesInject(nodes.Left.Item1, nodes.Left.Item2);
+                var nodes2 = GetGenericAnnotatedNodesInject(nodes.Right.Item1, nodes.Right.Item2);
+                GenSource(ctx, [.. nodes1, .. nodes2]);
+            });
         }
 
         /// <summary>
@@ -69,9 +67,9 @@ namespace Biwen.AutoClassGen
         /// </summary>
         /// <param name="compilation"></param>
         /// <param name="nodes"></param>
-        private static void GetGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+        private static List<AutoInjectDefine> GetGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
         {
-            if (nodes.Length == 0) return;
+            if (nodes.Length == 0) return [];
             // 注册的服务
             List<AutoInjectDefine> autoInjects = [];
             List<string> namespaces = [];
@@ -161,7 +159,9 @@ namespace Biwen.AutoClassGen
                 }
             }
 
-            _injectDefines.AddRange(autoInjects);
+            return autoInjects;
+
+            //_injectDefines.AddRange(autoInjects);
             //_namespaces.AddRange(namespaces);
         }
 
@@ -170,9 +170,9 @@ namespace Biwen.AutoClassGen
         /// </summary>
         /// <param name="compilation"></param>
         /// <param name="nodes"></param>
-        private static void GetAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+        private static List<AutoInjectDefine> GetAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
         {
-            if (nodes.Length == 0) return;
+            if (nodes.Length == 0) return [];
             // 注册的服务
             List<AutoInjectDefine> autoInjects = [];
             List<string> namespaces = [];
@@ -284,25 +284,25 @@ namespace Biwen.AutoClassGen
                 }
             }
 
-            _injectDefines.AddRange(autoInjects);
+            //_injectDefines.AddRange(autoInjects);
             //_namespaces.AddRange(namespaces);
+
+            return autoInjects;
 
         }
 
-
-        private static readonly object _lock = new();
-
+        //private static readonly object _lock = new();
         /// <summary>
         /// 所有的注入定义
         /// </summary>
-        private static List<AutoInjectDefine> _injectDefines = [];
+        //private static List<AutoInjectDefine> _injectDefines = [];
         //private static List<string> _namespaces = [];
 
-        private static void GenSource(SourceProductionContext context)
+        private static void GenSource(SourceProductionContext context, IEnumerable<AutoInjectDefine> injectDefines)
         {
             // 生成代码
             StringBuilder classes = new();
-            foreach (var define in _injectDefines)
+            injectDefines.Distinct().ToList().ForEach(define =>
             {
                 if (define.ImplType != define.BaseType)
                 {
@@ -312,7 +312,7 @@ namespace Biwen.AutoClassGen
                 {
                     classes.AppendLine($@"services.{define.LifeTime}<{define.ImplType}>();");
                 }
-            }
+            });
 
             string rawNamespace = string.Empty;
             //_namespaces.Distinct().ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
@@ -324,7 +324,7 @@ namespace Biwen.AutoClassGen
 
         }
 
-        private class AutoInjectDefine
+        private record AutoInjectDefine
         {
             public string ImplType { get; set; } = null!;
             public string BaseType { get; set; } = null!;
@@ -343,24 +343,21 @@ namespace Biwen.AutoClassGen
             // This file is generated by Biwen.AutoClassGen.AutoInjectSourceGenerator
 
             #pragma warning disable
-            namespace Microsoft.Extensions.DependencyInjection
+            $namespaces
+            public static partial class AutoInjectExtension
             {
-                $namespaces
-
-                public static class ServiceCollectionExtension
+                /// <summary>
+                /// 自动注册标注的服务
+                /// </summary>
+                /// <param name="services"></param>
+                /// <returns></returns>
+                public static  Microsoft.Extensions.DependencyInjection.IServiceCollection AddAutoInject(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
                 {
-                    /// <summary>
-                    /// 自动注册标注的服务
-                    /// </summary>
-                    /// <param name="services"></param>
-                    /// <returns></returns>
-                    public static IServiceCollection AddAutoInject(this IServiceCollection services)
-                    {
-                        $services
-                        return services;
-                    }
+                    $services
+                    return services;
                 }
             }
+            
             #pragma warning restore
             """;
 

@@ -42,6 +42,13 @@ var result3 = svcInject.Say2("from auto inject");
 Console.WriteLine(result3);
 
 
+// get auto inject svc
+var myService = scope.ServiceProvider.GetRequiredService<Biwen.AutoClassGen.TestConsole.Services2.MyService>();
+var result4 = myService.Hello("from my service");
+Console.WriteLine(result4);
+
+
+
 
 
 Biwen.AutoClassGen.Models.QueryRequest queryRequest = new()
