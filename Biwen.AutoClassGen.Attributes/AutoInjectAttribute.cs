@@ -35,13 +35,10 @@
 #if NET7_0_OR_GREATER
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    public class AutoInjectAttribute<T> : Attribute
+    public class AutoInjectAttribute<T> : AutoInjectAttribute
     {
-        public ServiceLifetime ServiceLifetime { get; set; }
-
-        public AutoInjectAttribute(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
+        public AutoInjectAttribute(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped) : base(typeof(T), serviceLifetime)
         {
-            ServiceLifetime = serviceLifetime;
         }
     }
 
