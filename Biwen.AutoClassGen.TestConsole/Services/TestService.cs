@@ -41,4 +41,19 @@
             return message;
         }
     }
+
+
+
+
+    public partial class TestServiceDto
+    {
+    }
+
+    [AutoInject]
+    [AutoDto<TestServiceDto>]
+    public partial class TestService3
+    {
+
+    }
+
 }

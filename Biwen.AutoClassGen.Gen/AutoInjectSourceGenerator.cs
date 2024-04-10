@@ -182,7 +182,10 @@ namespace Biwen.AutoClassGen
                 foreach (var attr in node.AttributeLists.AsEnumerable())
                 {
                     var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                    attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0);
+                    attributeSyntax = attr.Attributes.FirstOrDefault(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0);
+
+                    //其他的特性直接跳过
+                    if (attributeSyntax is null) continue;
 
                     if (attrName?.IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0)
                     {
