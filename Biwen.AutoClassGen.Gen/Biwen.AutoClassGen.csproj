@@ -8,7 +8,7 @@
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
 		<Authors>万雅虎</Authors>
-		<PackageVersion>1.3.2.3</PackageVersion>
+		<PackageVersion>1.3.3</PackageVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -24,7 +24,7 @@
 		<Copyright>MIT</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
-		<PackageReleaseNotes>AutoInject</PackageReleaseNotes>
+		<PackageReleaseNotes>AutoInject support NET8 keyed service</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1573,1591,1712,SA1309</NoWarn>
