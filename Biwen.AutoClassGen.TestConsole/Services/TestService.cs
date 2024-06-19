@@ -34,6 +34,10 @@
     [AutoInject]
     [AutoInject(serviceLifetime: ServiceLifetime.Transient)]
     [AutoInject(typeof(ITest2Service), ServiceLifetime.Scoped)]
+
+    //NET8.0+ 支持keyed
+    [AutoInjectKeyed<ITest2Service>("test2")]
+    [AutoInjectKeyed<ITest2Service>(nameof(TestService2))]
     public class TestService2 : ITest2Service
     {
         public string Say2(string message)
@@ -41,8 +45,6 @@
             return message;
         }
     }
-
-
 
 
     public partial class TestServiceDto

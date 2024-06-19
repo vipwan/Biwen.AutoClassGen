@@ -25,8 +25,19 @@ namespace Biwen.AutoClassGen
         /// </summary>
         private const string AutoInjectAttributeName = "Biwen.AutoClassGen.Attributes.AutoInjectAttribute";
 
+
+        private const string AutoInjectKeyedMetadataNameInject = "AutoInjectKeyed";
+
+        /// <summary>
+        /// .NET8.0以上支持Keyed
+        /// </summary>
+        private const string AutoInjectKeyedAttributeName = "Biwen.AutoClassGen.Attributes.AutoInjectKeyedAttribute`1";
+
+
+
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
+
             #region 非泛型
 
             var nodesAutoInject = context.SyntaxProvider.ForAttributeWithMetadataName(
@@ -43,21 +54,40 @@ namespace Biwen.AutoClassGen
 
             var nodesAutoInjectG = context.SyntaxProvider.ForAttributeWithMetadataName(
     GenericAutoInjectAttributeName,
-    (context, attributeSyntax) => true,
-    (syntaxContext, _) => syntaxContext.TargetNode).Collect();
+                (context, attributeSyntax) => true,
+                (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectG =
                 context.CompilationProvider.Combine(nodesAutoInjectG);
 
             #endregion
 
-            var join = compilationAndTypesInject.Combine(compilationAndTypesInjectG);
+            #region Keyed
 
-            context.RegisterSourceOutput(join, (ctx, nodes) =>
+            var nodesAutoInjectKeyed = context.SyntaxProvider.ForAttributeWithMetadataName(
+                AutoInjectKeyedAttributeName,
+                (context, attributeSyntax) => true,
+                (syntaxContext, _) => syntaxContext.TargetNode).Collect();
+
+            IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectKeyed =
+                context.CompilationProvider.Combine(nodesAutoInjectKeyed);
+
+            #endregion
+
+
+            var join = compilationAndTypesInject.Combine(compilationAndTypesInjectG).Combine(compilationAndTypesInjectKeyed);
+
+            context.RegisterSourceOutput(join,
+                (ctx,
+                nodes) =>
             {
-                var nodes1 = GetAnnotatedNodesInject(nodes.Left.Item1, nodes.Left.Item2);
-                var nodes2 = GetGenericAnnotatedNodesInject(nodes.Right.Item1, nodes.Right.Item2);
-                GenSource(ctx, [.. nodes1, .. nodes2]);
+                //程序集命名空间
+                var @namespace = nodes.Left.Left.Item1.AssemblyName ?? nodes.Left.Right.Item1.AssemblyName ?? nodes.Right.Item1.AssemblyName;
+
+                var nodes1 = GetAnnotatedNodesInject(nodes.Left.Left.Item1, nodes.Left.Left.Item2);
+                var nodes2 = GetGenericAnnotatedNodesInject(nodes.Left.Right.Item1, nodes.Left.Right.Item2);
+                var nodes3 = GetAnnotatedNodesInjectKeyed(nodes.Right.Item1, nodes.Right.Item2);
+                GenSource(ctx, [.. nodes1, .. nodes2, .. nodes3], @namespace);
             });
         }
 
@@ -293,6 +323,128 @@ namespace Biwen.AutoClassGen
 
         }
 
+
+        //获取keyed的Define
+        private static List<AutoInjectDefine> GetAnnotatedNodesInjectKeyed(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+        {
+            if (nodes.Length == 0) return [];
+            // 注册的服务
+            List<AutoInjectDefine> autoInjects = [];
+            List<string> namespaces = [];
+
+            foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
+            {
+                AttributeSyntax? attributeSyntax = null;
+                foreach (var attr in node.AttributeLists.AsEnumerable())
+                {
+                    var attrName = attr.Attributes.FirstOrDefault(x => x.Name.ToString().Contains(AutoInjectKeyedMetadataNameInject))?.Name.ToString();
+                    if (attrName is null) { continue; }
+
+                    attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AutoInjectKeyedMetadataNameInject, System.StringComparison.Ordinal) == 0);
+
+                    if (attrName?.IndexOf(AutoInjectKeyedMetadataNameInject, System.StringComparison.Ordinal) == 0)
+                    {
+                        //转译的Entity类名
+                        var baseTypeName = string.Empty;
+
+                        string pattern = @"(?<=<)(?<type>\w+)(?=>)";
+                        var match = Regex.Match(attributeSyntax.ToString(), pattern);
+                        if (match.Success)
+                        {
+                            baseTypeName = match.Groups["type"].Value.Split(['.']).Last();
+                        }
+                        else
+                        {
+                            continue;
+                        }
+
+                        var implTypeName = node.Identifier.ValueText;
+                        //var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
+                        var symbols = compilation.GetSymbolsWithName(implTypeName);
+                        foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
+                        {
+                            implTypeName = symbol.ToDisplayString();
+                            break;
+                        }
+
+                        var baseSymbols = compilation.GetSymbolsWithName(baseTypeName);
+                        foreach (ITypeSymbol baseSymbol in baseSymbols.Cast<ITypeSymbol>())
+                        {
+                            baseTypeName = baseSymbol.ToDisplayString();
+                            break;
+                        }
+
+                        string? key = attributeSyntax.ArgumentList?.Arguments[0].Expression.ToString();
+
+                        //使用正则表达式取双引号中的内容:
+                        //字符串的情况: "test2"
+                        string keyPattern1 = "\"(.*?)\"";
+
+                        if (Regex.IsMatch(key, keyPattern1))
+                        {
+                            key = Regex.Match(key, keyPattern1).Groups[1].Value;
+                        }
+
+                        //使用正则表达式取括号中的内容:
+                        //nameof的情况: nameof(TestService2)
+                        string keyPattern2 = @"\((.*?)\)";
+                        if (Regex.IsMatch(key, keyPattern2))
+                        {
+                            key = Regex.Match(key, keyPattern2).Groups[1].Value;
+                            //分割.取最后一个
+                            key = key.Split(['.']).Last();
+                        }
+
+
+                        string lifeTime = "AddKeyedScoped"; //default
+                        {
+                            if (attributeSyntax.ArgumentList != null)
+                            {
+                                for (var i = 1; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
+                                {
+                                    var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
+                                    if (expressionSyntax.IsKind(SyntaxKind.SimpleMemberAccessExpression))
+                                    {
+                                        var name = (expressionSyntax as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText;
+                                        lifeTime = name switch
+                                        {
+                                            "Singleton" => "AddKeyedSingleton",
+                                            "Transient" => "AddKeyedTransient",
+                                            "Scoped" => "AddKeyedScoped",
+                                            _ => "AddKeyedScoped",
+                                        };
+                                        break;
+                                    }
+                                }
+                            }
+
+                            autoInjects.Add(new AutoInjectDefine
+                            {
+                                ImplType = implTypeName,
+                                BaseType = baseTypeName,
+                                LifeTime = lifeTime,
+                                Key = key,
+                            });
+
+                            //命名空间
+                            symbols = compilation.GetSymbolsWithName(baseTypeName);
+                            foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
+                            {
+                                var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
+                                // 命名空间
+                                if (!namespaces.Contains(fullNameSpace))
+                                {
+                                    namespaces.Add(fullNameSpace);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return autoInjects;
+        }
+
         //private static readonly object _lock = new();
         /// <summary>
         /// 所有的注入定义
@@ -300,23 +452,44 @@ namespace Biwen.AutoClassGen
         //private static List<AutoInjectDefine> _injectDefines = [];
         //private static List<string> _namespaces = [];
 
-        private static void GenSource(SourceProductionContext context, IEnumerable<AutoInjectDefine> injectDefines)
+        private static void GenSource(SourceProductionContext context, IEnumerable<AutoInjectDefine> injectDefines, string? rootNamespace)
         {
             // 生成代码
             StringBuilder classes = new();
             injectDefines.Distinct().ToList().ForEach(define =>
             {
-                if (define.ImplType != define.BaseType)
+                //NET8.0以上支持Keyed
+                if (define.Key != null)
                 {
-                    classes.AppendLine($@"services.{define.LifeTime}<{define.BaseType}, {define.ImplType}>();");
+                    if (define.ImplType != define.BaseType)
+                    {
+                        classes.AppendLine($@"services.{define.LifeTime}<{define.BaseType}, {define.ImplType}>(""{define.Key}"");");
+                    }
+                    else
+                    {
+                        classes.AppendLine($@"services.{define.LifeTime}<{define.ImplType}>(""{define.Key}"");");
+                    }
                 }
+                //非Keyed
                 else
                 {
-                    classes.AppendLine($@"services.{define.LifeTime}<{define.ImplType}>();");
+                    if (define.ImplType != define.BaseType)
+                    {
+                        classes.AppendLine($@"services.{define.LifeTime}<{define.BaseType}, {define.ImplType}>();");
+                    }
+                    else
+                    {
+                        classes.AppendLine($@"services.{define.LifeTime}<{define.ImplType}>();");
+                    }
                 }
             });
 
             string rawNamespace = string.Empty;
+            if (rootNamespace != null)
+            {
+                rawNamespace += $"namespace {rootNamespace};\r\n";
+            }
+
             //_namespaces.Distinct().ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
             var envSource = Template.Replace("$services", classes.ToString());
             envSource = envSource.Replace("$namespaces", rawNamespace);
@@ -332,6 +505,12 @@ namespace Biwen.AutoClassGen
             public string BaseType { get; set; } = null!;
 
             public string LifeTime { get; set; } = null!;
+
+            /// <summary>
+            /// 针对NET8.0以上的Keyed Service,默认为NULL
+            /// </summary>
+            public string? Key { get; set; }
+
         }
 
 

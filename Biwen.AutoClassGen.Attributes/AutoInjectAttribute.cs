@@ -44,4 +44,20 @@
 
 #endif
 
+#if NET8_0_OR_GREATER
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    public class AutoInjectKeyedAttribute<T> : AutoInjectAttribute
+    {
+
+        public string Key { get; set; }
+
+        public AutoInjectKeyedAttribute(string key, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped) : base(typeof(T), serviceLifetime)
+        {
+            Key = key ?? throw new ArgumentNullException(nameof(key));
+        }
+    }
+
+#endif
+
 }
