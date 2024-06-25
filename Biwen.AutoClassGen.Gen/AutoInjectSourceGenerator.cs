@@ -454,6 +454,9 @@ namespace Biwen.AutoClassGen
 
         private static void GenSource(SourceProductionContext context, IEnumerable<AutoInjectDefine> injectDefines, string? rootNamespace)
         {
+            //如果没有任何注入定义,则不生成代码
+            if (!injectDefines.Any()) return;
+
             // 生成代码
             StringBuilder classes = new();
             injectDefines.Distinct().ToList().ForEach(define =>
