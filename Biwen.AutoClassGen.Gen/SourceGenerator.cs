@@ -725,7 +725,7 @@ namespace Biwen.AutoClassGen
 
         #region Template
 
-        public static readonly string MapperTemplate = $@"
+        private const string MapperTemplate = $@"
 namespace $namespace
 {{
     using $ns ;

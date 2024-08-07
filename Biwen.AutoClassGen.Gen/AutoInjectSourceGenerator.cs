@@ -165,12 +165,11 @@ namespace Biwen.AutoClassGen
                                 }
                             }
 
-                            autoInjects.Add(new AutoInjectDefine
-                            {
-                                ImplType = implTypeName,
-                                BaseType = baseTypeName,
-                                LifeTime = lifeTime,
-                            });
+                            autoInjects.Add(new AutoInjectDefine(
+                                implTypeName,
+                                baseTypeName,
+                                lifeTime
+                                ));
 
                             //命名空间
                             symbols = compilation.GetSymbolsWithName(baseTypeName);
@@ -293,12 +292,10 @@ namespace Biwen.AutoClassGen
                                 }
                             }
 
-                            autoInjects.Add(new AutoInjectDefine
-                            {
-                                ImplType = implTypeName,
-                                BaseType = baseTypeName,
-                                LifeTime = lifeTime,
-                            });
+                            autoInjects.Add(new AutoInjectDefine(
+                                implTypeName,
+                                baseTypeName,
+                                lifeTime));
 
                             //命名空间
                             symbols = compilation.GetSymbolsWithName(baseTypeName);
@@ -418,11 +415,11 @@ namespace Biwen.AutoClassGen
                                 }
                             }
 
-                            autoInjects.Add(new AutoInjectDefine
+                            autoInjects.Add(new AutoInjectDefine(
+                                implTypeName,
+                                baseTypeName,
+                                lifeTime)
                             {
-                                ImplType = implTypeName,
-                                BaseType = baseTypeName,
-                                LifeTime = lifeTime,
                                 Key = key,
                             });
 
@@ -502,13 +499,8 @@ namespace Biwen.AutoClassGen
 
         }
 
-        private record AutoInjectDefine
+        private record AutoInjectDefine(string ImplType, string BaseType, string LifeTime)
         {
-            public string ImplType { get; set; } = null!;
-            public string BaseType { get; set; } = null!;
-
-            public string LifeTime { get; set; } = null!;
-
             /// <summary>
             /// 针对NET8.0以上的Keyed Service,默认为NULL
             /// </summary>

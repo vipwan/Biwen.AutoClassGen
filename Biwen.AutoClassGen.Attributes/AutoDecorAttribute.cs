@@ -6,12 +6,11 @@
     /// Auto Decoration Attribute
     /// </summary>
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    public class AutoDecorAttribute : Attribute
+#pragma warning disable CS9113 // 参数未读。
+    public class AutoDecorAttribute(Type implement) : Attribute
+#pragma warning restore CS9113 // 参数未读。
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:删除未使用的参数", Justification = "<挂起>")]
-        public AutoDecorAttribute(Type implement) { }
     }
-
 #if NET7_0_OR_GREATER
 
     /// <summary>
