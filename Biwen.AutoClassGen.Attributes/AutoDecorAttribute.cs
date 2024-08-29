@@ -1,29 +1,24 @@
-﻿namespace Biwen.AutoClassGen.Attributes
-{
-    using System;
+﻿namespace Biwen.AutoClassGen.Attributes;
 
-    /// <summary>
-    /// Auto Decoration Attribute
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-#pragma warning disable CS9113 // 参数未读。
-    public class AutoDecorAttribute(Type implement) : Attribute
-#pragma warning restore CS9113 // 参数未读。
-    {
-    }
+/// <summary>
+/// 自动注入的装饰器特性,<paramref name="implement"/>为装饰器,特性请标注于被装饰的接口或类上
+/// </summary>
+[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public class AutoDecorAttribute(Type implement) : Attribute
+{
+    public Type ImplementType { get; private set; } = implement;
+}
 #if NET7_0_OR_GREATER
 
-    /// <summary>
-    /// Auto Decoration Attribute
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    public class AutoDecorAttribute<T> : AutoDecorAttribute where T : class
+/// <summary>
+/// 自动注入的装饰器特性,<typeparamref name="T"/> 为被标注服务or接口的装饰器,特性请标注于被装饰的接口或类上
+/// </summary>
+[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public class AutoDecorAttribute<T> : AutoDecorAttribute where T : class
+{
+    public AutoDecorAttribute() : base(typeof(T))
     {
-        public AutoDecorAttribute() : base(typeof(T))
-        {
-        }
     }
+}
 
 #endif
-
-}

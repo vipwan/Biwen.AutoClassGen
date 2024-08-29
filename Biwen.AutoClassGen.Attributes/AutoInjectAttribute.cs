@@ -1,7 +1,5 @@
 ﻿namespace Biwen.AutoClassGen.Attributes;
 
-using System;
-
 /// <summary>
 /// 服务生命周期
 /// </summary>
