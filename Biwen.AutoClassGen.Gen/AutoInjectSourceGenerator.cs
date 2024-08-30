@@ -42,7 +42,12 @@ namespace Biwen.AutoClassGen
 
             var nodesAutoInject = context.SyntaxProvider.ForAttributeWithMetadataName(
                 AutoInjectAttributeName,
-                (context, attributeSyntax) => true,
+                (context, _) =>
+                {
+                    //必须是类,且不是抽象类:
+                    return context is ClassDeclarationSyntax cds &&
+                           !cds.Modifiers.Any(SyntaxKind.AbstractKeyword);
+                },
                 (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInject =
@@ -54,7 +59,12 @@ namespace Biwen.AutoClassGen
 
             var nodesAutoInjectG = context.SyntaxProvider.ForAttributeWithMetadataName(
     GenericAutoInjectAttributeName,
-                (context, attributeSyntax) => true,
+                (context, _) =>
+                {
+                    //必须是类,且不是抽象类:
+                    return context is ClassDeclarationSyntax cds &&
+                           !cds.Modifiers.Any(SyntaxKind.AbstractKeyword);
+                },
                 (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectG =
@@ -66,7 +76,7 @@ namespace Biwen.AutoClassGen
 
             var nodesAutoInjectKeyed = context.SyntaxProvider.ForAttributeWithMetadataName(
                 AutoInjectKeyedAttributeName,
-                (context, attributeSyntax) => true,
+                (context, _) => true,
                 (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
             IncrementalValueProvider<(Compilation, ImmutableArray<SyntaxNode>)> compilationAndTypesInjectKeyed =

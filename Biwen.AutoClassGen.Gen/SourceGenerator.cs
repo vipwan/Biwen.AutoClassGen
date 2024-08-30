@@ -32,21 +32,23 @@ namespace Biwen.AutoClassGen
         private const string GenericAutoDtoAttributeName = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute`1";
 
 
+
+
         private const string AttributeMetadataNameDecor = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute";
 
-        //private const string AttributeValueMetadataNameDecor = "AutoDecor";
-        /// <summary>
-        /// 泛型AutoDecorAttribute
-        /// </summary>
         private const string GenericAutoDecorAttributeName = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute`1";
 
 
+        #region DecorFor
+
+        private const string AutoDecorForAttrbuteName = "AutoDecorFor";
+        //private const string AttributeMetadataNameDecorFor = "Biwen.AutoClassGen.Attributes.AutoDecorForAttribute";
+        //private const string GenericAutoDecorForAttributeName = "Biwen.AutoClassGen.Attributes.AutoDecorForAttribute`1";
+        #endregion
 
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-
-
             #region AutoGenAttribute
 
 
@@ -90,28 +92,77 @@ namespace Biwen.AutoClassGen
 
             #endregion
 
-
             #region AutoDecorAttribute
 
             var nodesDecor = context.SyntaxProvider.ForAttributeWithMetadataName(
                                AttributeMetadataNameDecor,
-                               (context, attributeSyntax) => true,
+                               (context, _) => true,
                                (syntaxContext, _) => syntaxContext.TargetSymbol).Collect();
 
             var nodesDecorG = context.SyntaxProvider.ForAttributeWithMetadataName(
                    GenericAutoDecorAttributeName,
-                   (context, attributeSyntax) => true,
+                   (context, _) => true,
                    (syntaxContext, _) => syntaxContext.TargetSymbol).Collect();
 
-            IncrementalValueProvider<((Compilation, ImmutableArray<ISymbol>), ImmutableArray<ISymbol>)> compilationAndTypesDecor =
-                context.CompilationProvider.Combine(nodesDecor).Combine(nodesDecorG);
+            var forNode = context.SyntaxProvider.CreateSyntaxProvider((node, _) =>
+            {
+                if (!IsNotAbstractClass(node))
+                    return false;
+                //包含AutoDecorForAttribute的类
+                if (node is ClassDeclarationSyntax cds)
+                {
+                    return cds.AttributeLists.Any(x =>
+                    x.Attributes.Any(x => x.Name.ToFullString() == AutoDecorForAttrbuteName));
+                }
+                return false;
+            }, (ctx, _) => ctx.Node).Collect();
 
-            context.RegisterSourceOutput(compilationAndTypesDecor, static (spc, source) =>
-            HandleAnnotatedNodesDecor(source.Item1.Item1, source.Item1.Item2, source.Item2, spc));
+            var forNodeG = context.SyntaxProvider.CreateSyntaxProvider((node, _) =>
+            {
+                if (!IsNotAbstractClass(node))
+                    return false;
+                //包含AutoDecorForAttribute的类
+                if (node is ClassDeclarationSyntax cds)
+                {
+                    //当前是泛型特性
+                    return cds.AttributeLists.Any(x =>
+                    x.Attributes.Any(x =>
+                    x.Name is GenericNameSyntax &&
+                    x.Name.ToFullString().StartsWith(AutoDecorForAttrbuteName, StringComparison.Ordinal)
+                    ));
+                }
+                return false;
+            }, (ctx, _) => ctx.Node).Collect();
+
+            var compilationAndTypesDecor = context.CompilationProvider
+                .Combine(nodesDecor)
+                .Combine(nodesDecorG)
+                .Combine(forNode)
+                .Combine(forNodeG);
+
+            context.RegisterSourceOutput(compilationAndTypesDecor,
+                static (spc, source) =>
+
+                HandleAnnotatedNodesDecor(
+                    source.Left.Left.Left.Left,
+                    source.Left.Left.Left.Right,
+                    source.Left.Left.Right,
+                    source.Left.Right,
+                    source.Right,
+                    spc));
 
             #endregion
         }
 
+        /// <summary>
+        /// SyntaxNode是类,且不是抽象类
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private static bool IsNotAbstractClass(SyntaxNode node)
+        {
+            return node is ClassDeclarationSyntax cds && !cds.Modifiers.Any(SyntaxKind.AbstractKeyword);
+        }
 
         /// <summary>
         /// Gen AutoGenAttribute
@@ -631,9 +682,16 @@ namespace Biwen.AutoClassGen
         }
 
 
-        private static void HandleAnnotatedNodesDecor(Compilation compilation, ImmutableArray<ISymbol> nodes, ImmutableArray<ISymbol> nodes2, SourceProductionContext context)
+        private static void HandleAnnotatedNodesDecor(
+            Compilation compilation,
+            ImmutableArray<ISymbol> nodes,
+            ImmutableArray<ISymbol> nodes2,
+            ImmutableArray<SyntaxNode> nodes3,//for
+            ImmutableArray<SyntaxNode> nodes4,//forG
+
+            SourceProductionContext context)
         {
-            if ((nodes.Length + nodes2.Length) == 0) return;
+            if ((nodes.Length + nodes2.Length + nodes3.Length + nodes4.Length) == 0) return;
 
             IList<KeyValuePair<string, string>> ofImpls = [];
             // (普通特性)获取所有实现类
@@ -679,6 +737,77 @@ namespace Biwen.AutoClassGen
 
                             ofImpls.Add(new KeyValuePair<string, string>(tName, implName));
                         }
+                    }
+                }
+            }
+
+            //for:
+            // (普通特性)获取所有实现类
+            foreach (var node in nodes3)
+            {
+                if (node is ClassDeclarationSyntax cds)
+                {
+                    //查找特性DecorForAttribute:
+                    var attrList = cds.AttributeLists.First(
+                        x =>
+                        x.Attributes.Any(
+                            x =>
+                            x.Name is not GenericNameSyntax &&
+                            x.Name.ToFullString() == AutoDecorForAttrbuteName));
+
+                    var attr = attrList.Attributes.First(x =>
+                    x.Name is not GenericNameSyntax &&
+                    x.Name.ToFullString() == AutoDecorForAttrbuteName);
+
+                    if (attr.ArgumentList!.Arguments[0].Expression is not TypeOfExpressionSyntax attributeSyntax)
+                        continue;
+
+                    var tImpl = compilation.GetSymbolsWithName(cds.Identifier.ValueText, SymbolFilter.Type).FirstOrDefault()?.ToDisplayString();
+
+                    if (string.IsNullOrEmpty(tImpl))
+                        continue;
+
+                    var implNameStr = attributeSyntax!.Type.ToString();
+                    var symbol = compilation.GetSymbolsWithName(implNameStr, SymbolFilter.Type);
+                    if (symbol?.Any() is true)
+                    {
+                        var forName = symbol.First().ToDisplayString();
+                        //for是相反的:
+                        ofImpls.Add(new KeyValuePair<string, string>(forName, tImpl!));
+                    }
+                }
+            }
+            // (泛型特性)获取所有实现类
+            foreach (var node in nodes4)
+            {
+                if (node is ClassDeclarationSyntax cds)
+                {
+                    //查找特性DecorForAttribute:
+                    var attrList = cds.AttributeLists.First(
+                        x =>
+                        x.Attributes.Any(
+                            x =>
+                            x.Name is GenericNameSyntax &&
+                            x.Name.ToFullString().StartsWith(AutoDecorForAttrbuteName, StringComparison.Ordinal)));
+
+                    var attr = attrList.Attributes.First(x =>
+                    x.Name is GenericNameSyntax &&
+                    x.Name.ToFullString().StartsWith(AutoDecorForAttrbuteName, StringComparison.Ordinal));
+
+                    var attrSyntax = attr.Name as GenericNameSyntax;
+
+                    var forNameStr = (attrSyntax!.TypeArgumentList.Arguments[0] as IdentifierNameSyntax)!.Identifier.ValueText;
+
+                    var tImpl = compilation.GetSymbolsWithName(cds.Identifier.ValueText, SymbolFilter.Type).FirstOrDefault()?.ToDisplayString();
+                    if (string.IsNullOrEmpty(tImpl))
+                        continue;
+
+                    var symbol = compilation.GetSymbolsWithName(forNameStr, SymbolFilter.Type);
+                    if (symbol?.Any() is true)
+                    {
+                        var forName = symbol.First().ToDisplayString();
+                        //for是相反的:
+                        ofImpls.Add(new KeyValuePair<string, string>(forName, tImpl!));
                     }
                 }
             }

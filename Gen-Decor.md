@@ -1,16 +1,31 @@
-## Usage
+ï»¿## Usage
 
 ```c#
+
+//æ³¨æ„ AutoDecorå’ŒAutoDecorForæ˜¯æƒ³æ³•çš„æ ‡æ³¨,ä¸€ä¸ªæ ‡æ³¨äºéœ€è¦è£…é¥°çš„ç±»å‹ä¸Š,ä¸€ä¸ªæ ‡æ³¨äºè£…é¥°å™¨ä¸Š
+
+//æ ‡æ³¨äºéœ€è¦è£…é¥°çš„ç±»å‹ä¸Š
+
 //netstandard2.0 +
 [AutoDecor(Type implement)]
 
 //C#11(NET7+) support generic attribute
 [AutoDecor<T>]
 
+
+//æ ‡æ³¨äºè£…é¥°å™¨ä¸Š
+
+//netstandard2.0 +
+[AutoDecorFor(Type forType)]
+
+//C#11(NET7+) support generic attribute
+[AutoDecorFor<T>]
+
+
 ```
 
 ### Define Base Service (IService or Class) & mark `[AutoDecor]`
-- Çë×¢Òâ,ÈçĞèÒª±ÜÃâ´úÂëÇÖÈë,¿ÉÒÔÊ¹ÓÃ`partial`²ğ·ÖÒµÎñ´úÂëºÍÌØĞÔ
+- è¯·æ³¨æ„,å¦‚éœ€è¦é¿å…ä»£ç ä¾µå…¥,å¯ä»¥ä½¿ç”¨`partial`æ‹†åˆ†ä¸šåŠ¡ä»£ç å’Œç‰¹æ€§
 
 ```c#
 
@@ -36,7 +51,7 @@
     public partial class ClassService
     {
         /// <summary>
-        /// Çë×¢Òâ£¬Èç¹ûTServiceÊÇÒ»¸öÀà,¶ø²»ÊÇinterface,ÕâÀïµÄvirtual¹Ø¼ü×ÖÊÇ±ØĞëµÄ
+        /// è¯·æ³¨æ„ï¼Œå¦‚æœTServiceæ˜¯ä¸€ä¸ªç±»,è€Œä¸æ˜¯interface,è¿™é‡Œçš„virtualå…³é”®å­—æ˜¯å¿…é¡»çš„
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
@@ -153,4 +168,4 @@ var classService = builder.Services.GetRequiredService<ClassService>();
 
 ### Report Diagnostic Code
 
-- GEN043: ±ê¼Ç[AutoDecor]µÄÀàĞÍ,×°ÊÎÆ÷±ØĞëÊÇËüµÄÊµÏÖÀà»òÕß×ÓÀà
+- GEN043: æ ‡è®°[AutoDecor]çš„ç±»å‹,è£…é¥°å™¨å¿…é¡»æ˜¯å®ƒçš„å®ç°ç±»æˆ–è€…å­ç±»

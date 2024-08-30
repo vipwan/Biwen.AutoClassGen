@@ -77,7 +77,7 @@
         public string SayHello(string name)
         {
             Console.WriteLine($"Hello {name} from HelloServiceDecor1");
-            var result= _helloService.SayHello(name);
+            var result = _helloService.SayHello(name);
 
             _logger.LogInformation("Hello {result} from HelloServiceDecor1", result);
 
@@ -100,13 +100,64 @@
 
         public string SayHello(string name)
         {
-            Console.WriteLine("Hello {0} from HelloServiceDecor2",name);
-            var result= _helloService.SayHello(name);
+            Console.WriteLine("Hello {0} from HelloServiceDecor2", name);
+            var result = _helloService.SayHello(name);
             _logger.LogInformation("Hello {result} from HelloServiceDecor2", result);
             return result;
 
         }
     }
+
+
+
+    #region Decorator for
+
+    [AutoDecorFor(typeof(IHelloService))]
+    public class HelloServiceFor : IHelloService
+    {
+        private readonly IHelloService _helloService;
+        private readonly ILogger<HelloServiceFor> _logger;
+        public HelloServiceFor(IHelloService helloService, ILogger<HelloServiceFor> logger)
+        {
+            _helloService = helloService;
+            _logger = logger;
+        }
+        public string SayHello(string name)
+        {
+            Console.WriteLine($"Hello {name} from HelloServiceFor");
+            var result = _helloService.SayHello(name);
+            _logger.LogInformation("Hello {result} from HelloServiceFor", result);
+            return result;
+        }
+    }
+
+
+    /// <summary>
+    /// 当前两种模式标注都支持,但是因为For相同,所以重复的标注会被忽略
+    /// </summary>
+    [AutoDecorFor(typeof(IHelloService))]
+    [AutoDecorFor<IHelloService>]
+    public class HelloServiceFor2 : IHelloService
+    {
+        private readonly IHelloService _helloService;
+        private readonly ILogger<HelloServiceFor> _logger;
+        public HelloServiceFor2(IHelloService helloService, ILogger<HelloServiceFor> logger)
+        {
+            _helloService = helloService;
+            _logger = logger;
+        }
+        public string SayHello(string name)
+        {
+            Console.WriteLine($"Hello {name} from HelloServiceFor");
+            var result = _helloService.SayHello(name);
+            _logger.LogInformation("Hello {result} from HelloServiceFor", result);
+            return result;
+        }
+    }
+
+    #endregion
+
+
 
 
 }
