@@ -24,7 +24,7 @@
 		<Copyright>MIT</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageTags>Roslyn,SourceGenerator,QuickApi</PackageTags>
-		<PackageReleaseNotes>built-in decorate extension</PackageReleaseNotes>
+		<PackageReleaseNotes>built-in decorate for extension</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1573,1591,1712,SA1309</NoWarn>

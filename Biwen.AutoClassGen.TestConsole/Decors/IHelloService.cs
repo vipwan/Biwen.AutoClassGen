@@ -1,7 +1,7 @@
 ﻿namespace Biwen.AutoClassGen.TestConsole.Decors
 {
 
-    [AutoDecor(typeof(HelloServiceDecor1))]
+    //[AutoDecor(typeof(HelloServiceDecor1))]
     [AutoDecor<HelloServiceDecor2>]
     public partial interface IHelloService
     {
@@ -112,36 +112,31 @@
 
     #region Decorator for
 
-    [AutoDecorFor(typeof(IHelloService))]
-    public class HelloServiceFor : IHelloService
+    public interface IHelloServiceFor
     {
-        private readonly IHelloService _helloService;
-        private readonly ILogger<HelloServiceFor> _logger;
-        public HelloServiceFor(IHelloService helloService, ILogger<HelloServiceFor> logger)
-        {
-            _helloService = helloService;
-            _logger = logger;
-        }
-        public string SayHello(string name)
-        {
-            Console.WriteLine($"Hello {name} from HelloServiceFor");
-            var result = _helloService.SayHello(name);
-            _logger.LogInformation("Hello {result} from HelloServiceFor", result);
-            return result;
-        }
+        string SayHello(string name);
     }
 
+    [AutoInject<IHelloServiceFor>]
+    public class HelloServiceFor : IHelloServiceFor
+    {
+        public string SayHello(string name)
+        {
+            return $"Hello {name} from HelloServiceFor";
+        }
+    }
 
     /// <summary>
-    /// 当前两种模式标注都支持,但是因为For相同,所以重复的标注会被忽略
+    /// 请注意,由于HelloServiceForDecor2也标注了AutoDecorFor,
+    /// 所以尽管HelloServiceForDecor也有AutoDecorFor标注,但是会被HelloServiceForDecor2覆盖!
+    /// 以最后一个为准
     /// </summary>
-    [AutoDecorFor(typeof(IHelloService))]
-    [AutoDecorFor<IHelloService>]
-    public class HelloServiceFor2 : IHelloService
+    [AutoDecorFor(typeof(IHelloServiceFor))]
+    public class HelloServiceForDecor : IHelloServiceFor
     {
-        private readonly IHelloService _helloService;
-        private readonly ILogger<HelloServiceFor> _logger;
-        public HelloServiceFor2(IHelloService helloService, ILogger<HelloServiceFor> logger)
+        private readonly IHelloServiceFor _helloService;
+        private readonly ILogger<HelloServiceForDecor> _logger;
+        public HelloServiceForDecor(IHelloServiceFor helloService, ILogger<HelloServiceForDecor> logger)
         {
             _helloService = helloService;
             _logger = logger;
@@ -155,9 +150,26 @@
         }
     }
 
+    [AutoDecorFor<IHelloServiceFor>]
+    public class HelloServiceForDecor2 : IHelloServiceFor
+    {
+        private readonly IHelloServiceFor _helloService;
+        private readonly ILogger<HelloServiceForDecor2> _logger;
+        public HelloServiceForDecor2(IHelloServiceFor helloService, ILogger<HelloServiceForDecor2> logger)
+        {
+            _helloService = helloService;
+            _logger = logger;
+        }
+        public string SayHello(string name)
+        {
+            Console.WriteLine($"Hello {name} from HelloServiceFor2");
+            var result = _helloService.SayHello(name);
+            _logger.LogInformation("Hello {result} from HelloServiceFor2", result);
+            return result;
+        }
+    }
+
+
     #endregion
-
-
-
 
 }

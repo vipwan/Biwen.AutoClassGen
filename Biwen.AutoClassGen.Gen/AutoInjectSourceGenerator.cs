@@ -34,7 +34,6 @@ namespace Biwen.AutoClassGen
         private const string AutoInjectKeyedAttributeName = "Biwen.AutoClassGen.Attributes.AutoInjectKeyedAttribute`1";
 
 
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
 
@@ -504,7 +503,7 @@ namespace Biwen.AutoClassGen
             var envSource = Template.Replace("$services", classes.ToString());
             envSource = envSource.Replace("$namespaces", rawNamespace);
             // format:
-            envSource = FormatContent(envSource);
+            envSource = envSource.FormatContent();
             context.AddSource($"Biwen.AutoClassGenInject.g.cs", SourceText.From(envSource, Encoding.UTF8));
 
         }
@@ -517,7 +516,6 @@ namespace Biwen.AutoClassGen
             public string? Key { get; set; }
 
         }
-
 
         #region tmpl
 
@@ -548,20 +546,6 @@ namespace Biwen.AutoClassGen
             """;
 
         #endregion
-
-
-        /// <summary>
-        /// 格式化代码
-        /// </summary>
-        /// <param name="csCode"></param>
-        /// <returns></returns>
-        private static string FormatContent(string csCode)
-        {
-            var tree = CSharpSyntaxTree.ParseText(csCode);
-            var root = tree.GetRoot().NormalizeWhitespace();
-            var ret = root.ToFullString();
-            return ret;
-        }
 
     }
 }

@@ -11,7 +11,7 @@ public enum ServiceLifetime
 }
 
 /// <summary>
-/// 
+/// AutoInject
 /// </summary>
 /// <param name="baseType">NULL表示服务自身</param>
 /// <param name="serviceLifetime">服务生命周期</param>

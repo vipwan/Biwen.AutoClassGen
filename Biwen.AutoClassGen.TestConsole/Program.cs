@@ -3,25 +3,24 @@ using Biwen.AutoClassGen.TestConsole.Decors;
 using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 using Biwen.AutoClassGen.TestConsole.Services;
-using Microsoft.Extensions.DependencyInjection;
-
 
 var builder = WebApplication.CreateBuilder();
+
+// Add services to the container.
+builder.Services.AddLogging(config =>
+{
+    config.AddConsole();
+});
 
 
 builder.Services.AddScoped<IHelloService, HelloService>();
 builder.Services.AddScoped<ClassService>();
 
-//builder.Services.TryDecorate<IHelloService, HelloServiceDecor2>();
-
-
-// add auto decor
-builder.Services.AddAutoDecor();
-
 // add auto inject
 Biwen.AutoClassGen.TestConsole.AutoInjectExtension.AddAutoInject(builder.Services);
 
-
+// add auto decor
+builder.Services.AddAutoDecor();
 
 var app = builder.Build();
 
@@ -54,6 +53,11 @@ var keyedService = scope.ServiceProvider.GetRequiredKeyedService<ITest2Service>(
 var result5 = keyedService.Say2("from keyed service");
 Console.WriteLine(result5);
 
+
+// auto decorate for 
+var forService = scope.ServiceProvider.GetRequiredService<IHelloServiceFor>();
+var result6 = forService.SayHello("from IHelloServiceFor");
+Console.WriteLine(result6);
 
 
 
