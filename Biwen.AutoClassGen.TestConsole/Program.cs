@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder();
 // get version
 Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.FileVersion);
 Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.Current);
+Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.AssemblyVersion);
 
 // Add services to the container.
 builder.Services.AddLogging(config =>
