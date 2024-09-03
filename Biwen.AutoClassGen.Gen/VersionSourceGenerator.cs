@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+ï»¿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -7,7 +7,7 @@ using System.Text;
 namespace Biwen.AutoClassGen;
 
 /// <summary>
-/// Éú³É°æ±¾ĞÅÏ¢
+/// ç”Ÿæˆç‰ˆæœ¬ä¿¡æ¯
 /// </summary>
 [Generator]
 public class VersionSourceGenerator : IIncrementalGenerator
@@ -16,7 +16,7 @@ public class VersionSourceGenerator : IIncrementalGenerator
     {
         //build_property.projectdir
 
-        //Éú³É°æ±¾ºÅ
+        //ç”Ÿæˆç‰ˆæœ¬å·
         var inc = context.AnalyzerConfigOptionsProvider.Select((pvd, _) =>
         {
             var flag = pvd.GlobalOptions.TryGetValue("build_property.projectdir", out var root);
@@ -24,22 +24,22 @@ public class VersionSourceGenerator : IIncrementalGenerator
                 return null;
 
             //var file = Path.Combine(root, $"*.csproj");
-            //²éÕÒcsprojÎÄ¼ş
+            //æŸ¥æ‰¾csprojæ–‡ä»¶
             var files = Directory.GetFiles(root, "*.csproj", SearchOption.TopDirectoryOnly);
 
             return files.Length == 0 ? null : files[0];
         });
 
-        //Éú³É
+        //ç”Ÿæˆ
         context.RegisterSourceOutput(inc, (ctx, projectFile) =>
         {
             string version = "1.0.0";
             string fileVersion = "1.0.0";
 
-            // »ñÈ¡²»º¬À©Õ¹ÃûµÄÎÄ¼şÃû
+            // è·å–ä¸å«æ‰©å±•åçš„æ–‡ä»¶å
             var @namespace = Path.GetFileNameWithoutExtension(projectFile);
 
-            // ¶ÁÈ¡ÎÄ¼ş
+            // è¯»å–æ–‡ä»¶
             var text = File.ReadAllText(projectFile);
             var match = Regex.Match(text, "<Version>(.*?)</Version>");
             if (match.Success)
@@ -74,11 +74,7 @@ namespace {@namespace}.Generated
     }}
 }}
 ";
-            // Éú³É´úÂë
-            //StringBuilder stringBuilder = new();
-            //stringBuilder.AppendLine($"// Version: {version}");
-
-            // Êä³ö´úÂë
+            // è¾“å‡ºä»£ç 
             ctx.AddSource("version.g.cs", SourceText.From(source, Encoding.UTF8));
         });
     }
