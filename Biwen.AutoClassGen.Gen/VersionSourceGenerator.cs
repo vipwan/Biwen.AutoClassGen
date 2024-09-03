@@ -12,6 +12,9 @@ namespace Biwen.AutoClassGen;
 [Generator]
 public class VersionSourceGenerator : IIncrementalGenerator
 {
+
+    private const string DefaultVersion = "1.0.0";
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         //build_property.projectdir
@@ -33,15 +36,29 @@ public class VersionSourceGenerator : IIncrementalGenerator
         //生成
         context.RegisterSourceOutput(inc, (ctx, projectFile) =>
         {
-            string version = "1.0.0";
-            string fileVersion = "1.0.0";
-            string assemblyVersion = "1.0.0";
+            string version = DefaultVersion;
+            string fileVersion = DefaultVersion;
+            string assemblyVersion = DefaultVersion;
 
             // 获取不含扩展名的文件名
             var @namespace = Path.GetFileNameWithoutExtension(projectFile);
 
             // 读取文件
             var text = File.ReadAllText(projectFile);
+
+            // 载入Import的文件,例如 : <Import Project="..\Version.props" />
+            // 使用正则表达式匹配Project:
+            var importMatchs = Regex.Matches(text, "<Import Project=\"(.*?)\"");
+
+            foreach (Match importMatch in importMatchs)
+            {
+                var importFile = Path.Combine(Path.GetDirectoryName(projectFile), importMatch.Groups[1].Value);
+                if (File.Exists(importFile))
+                {
+                    text += File.ReadAllText(importFile);
+                }
+            }
+
             var match = Regex.Match(text, "<Version>(.*?)</Version>");
             var fileVersionMatch = Regex.Match(text, "<FileVersion>(.*?)</FileVersion>");
             var assemblyVersionMatch = Regex.Match(text, "<AssemblyVersion>(.*?)</AssemblyVersion>");
