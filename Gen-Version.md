@@ -32,9 +32,9 @@ Version.props文件内容:
 
 #### 使用方式:
 ```csharp
-Console.WriteLine({namespace}.Version.FileVersion);
-Console.WriteLine({namespace}.Version.Current);
-Console.WriteLine({namespace}.Version.AssemblyVersion);
+Console.WriteLine({namespace}.Generated.Version.FileVersion);
+Console.WriteLine({namespace}.Generated.Version.Current);
+Console.WriteLine({namespace}.Generated.Version.AssemblyVersion);
 ```
 #### 注意事项:
 
