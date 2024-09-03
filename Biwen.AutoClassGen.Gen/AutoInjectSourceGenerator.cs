@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Biwen.AutoClassGen
 {
-    [Generator(LanguageNames.CSharp)]
+    [Generator]
     public class AutoInjectSourceGenerator : IIncrementalGenerator
     {
         private const string AttributeValueMetadataNameInject = "AutoInject";

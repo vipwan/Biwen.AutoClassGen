@@ -6,6 +6,10 @@ using Biwen.AutoClassGen.TestConsole.Services;
 
 var builder = WebApplication.CreateBuilder();
 
+// get version
+Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.FileVersion);
+Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.Current);
+
 // Add services to the container.
 builder.Services.AddLogging(config =>
 {

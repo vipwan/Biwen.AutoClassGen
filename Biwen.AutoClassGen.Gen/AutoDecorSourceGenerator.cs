@@ -14,7 +14,7 @@ namespace Biwen.AutoClassGen
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Text;
 
-    [Generator(LanguageNames.CSharp)]
+    [Generator]
     public class AutoDecorSourceGenerator : IIncrementalGenerator
     {
         private const string AttributeMetadataNameDecor = "Biwen.AutoClassGen.Attributes.AutoDecorAttribute";
