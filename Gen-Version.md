@@ -22,8 +22,8 @@ Version.props文件内容:
 	<PropertyGroup>
 		<PackageVersion>2.0.0-preview4</PackageVersion>
 		<PackageReleaseNotes></PackageReleaseNotes>
-		<AssemblyVersion>2.0.3</AssemblyVersion>
-		<FileVersion>2.0.2</FileVersion>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<FileVersion>2.0.0</FileVersion>
 		<Version>2.0.1</Version>
 	</PropertyGroup>
 </Project>
