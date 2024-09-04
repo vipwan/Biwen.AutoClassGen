@@ -502,6 +502,7 @@ namespace Biwen.AutoClassGen
             //_namespaces.Distinct().ToList().ForEach(ns => rawNamespace += $"using {ns};\r\n");
             var envSource = Template.Replace("$services", classes.ToString());
             envSource = envSource.Replace("$namespaces", rawNamespace);
+            envSource = envSource.Replace("$codegen", $"[global::System.CodeDom.Compiler.GeneratedCode(\"{ThisAssembly.Product}\", \"{ThisAssembly.FileVersion}\")]");
             // format:
             envSource = envSource.FormatContent();
             context.AddSource($"Biwen.AutoClassGenInject.g.cs", SourceText.From(envSource, Encoding.UTF8));
@@ -528,6 +529,7 @@ namespace Biwen.AutoClassGen
 
             #pragma warning disable
             $namespaces
+            $codegen
             public static partial class AutoInjectExtension
             {
                 /// <summary>

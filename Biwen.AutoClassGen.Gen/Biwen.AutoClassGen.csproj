@@ -8,7 +8,9 @@
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
 		<Authors>万雅虎</Authors>
-		<PackageVersion>1.3.7.1</PackageVersion>
+		<PackageVersion>1.3.7.2</PackageVersion>
+		<Version>$(PackageVersion)</Version>
+		<FileVersion>$(PackageVersion)</FileVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -16,7 +18,6 @@
 		<InjectIsExternalInitOnLegacy>true</InjectIsExternalInitOnLegacy>
 		<LangVersion>latest</LangVersion>
 
-		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 		<IsRoslynComponent>true</IsRoslynComponent>
 
@@ -44,6 +45,8 @@
 
 		<!--<PackageReference Include="Newtonsoft.Json" Version="13.0.3" PrivateAssets="all" GeneratePathProperty="true"  />
 		<None Include="$(PkgNewtonsoft_Json)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />-->
+
+		<PackageReference Include="AssemblyMetadata.Generators" Version="2.0.0" PrivateAssets="All" />
 
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0-1.final" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0-1.final" PrivateAssets="all" />
