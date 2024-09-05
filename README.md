@@ -24,6 +24,7 @@ dotnet add package Biwen.AutoClassGen
 - [Gen Decoration Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Decor.md)
 - [Gen AutoInject Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-AutoInject.md)
 - [Gen Version](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Version.md)
+- [Gen Assembly Metadata](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Metadata.md)
 
 ### Used by
 #### if you use this library, please tell me, I will add your project here.

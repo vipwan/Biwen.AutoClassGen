@@ -11,6 +11,9 @@ Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.FileVersion);
 Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.Current);
 Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.Version.AssemblyVersion);
 
+// get assembly info
+Console.WriteLine(Biwen.AutoClassGen.TestConsole.Generated.AssemblyMetadata.TargetFramework);
+
 // Add services to the container.
 builder.Services.AddLogging(config =>
 {
