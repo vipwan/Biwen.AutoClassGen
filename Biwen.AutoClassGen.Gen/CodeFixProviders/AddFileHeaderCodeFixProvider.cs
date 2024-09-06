@@ -84,9 +84,9 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
     }
 
 
-    private static async Task<Document> FixDocumentAsync(Document document, TextSpan span, CancellationToken cancellationToken)
+    private static async Task<Document> FixDocumentAsync(Document document, TextSpan span, CancellationToken ct)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        var root = await document.GetSyntaxRootAsync(ct).ConfigureAwait(false);
 
         //从项目配置中获取文件头部信息
         var projFilePath = document.Project.FilePath ?? "C:\\test.csproj";//单元测试时没有文件路径,因此使用默认路径
@@ -116,13 +116,14 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
 
         #region 查找程序集元数据
 
-        document.Project.TryGetCompilation(out var compilation);
-        var constants = new List<AssemblyConstant>();
+        var compilation = await document.Project.GetCompilationAsync(ct).ConfigureAwait(false);
 
         //当Assembly为Microsoft.CodeAnalysis.TypedConstant时不做处理
 
         if (!compilation?.AssemblyName?.StartsWith("Microsoft.CodeAnalysis", StringComparison.Ordinal) is true)
         {
+            var constants = new List<AssemblyConstant>();
+
             var assemblyAttributes = compilation?.Assembly.GetAttributes();
             if (assemblyAttributes is not null)
             {
