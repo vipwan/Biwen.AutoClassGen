@@ -31,8 +31,8 @@ public class AddFileHeaderCodeFixProviderTest :
         var @code = "namespace Biwen { public interface IRequest {} }";
 
         var fixedCode = """
-            // Licensed to the {Product} under one or more agreements.
-            // The {Product} licenses this file to you under the MIT license.
+            // Licensed to the TestProject under one or more agreements.
+            // The TestProject licenses this file to you under the MIT license.
             // See the LICENSE file in the project root for more information.
             namespace Biwen { public interface IRequest {} }
             """;

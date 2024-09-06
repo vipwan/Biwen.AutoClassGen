@@ -71,7 +71,7 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
         string? author = Environment.UserName;
         string? title = document.Project.Name;
         string? version = document.Project.Version.ToString();
-        string? product = document.Project.Name;
+        string? product = document.Project.AssemblyName;
         string? file = Path.GetFileName(document.FilePath);
 #pragma warning disable CA1305 // 指定 IFormatProvider
         string? date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
@@ -80,23 +80,24 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
         if (File.Exists(configFilePath))
         {
             comment = File.ReadAllText(configFilePath, System.Text.Encoding.UTF8);
-            //使用正则表达式替换
-            comment = Regex.Replace(comment, @"\{(?<key>[^}]+)\}", m =>
-            {
-                var key = m.Groups["key"].Value;
-                return key switch
-                {
-                    "Product" => product,
-                    "Title" => title,
-                    "Version" => version,
-                    "Date" => date,
-                    "Author" => author,
-                    "Copyright" => copyright,
-                    "File" => file,
-                    _ => m.Value,
-                };
-            });
         }
+
+        //使用正则表达式替换
+        comment = Regex.Replace(comment, @"\{(?<key>[^}]+)\}", m =>
+        {
+            var key = m.Groups["key"].Value;
+            return key switch
+            {
+                "Product" => product,
+                "Title" => title,
+                "Version" => version,
+                "Date" => date,
+                "Author" => author,
+                "Copyright" => copyright,
+                "File" => file,
+                _ => m.Value,
+            };
+        });
 
         var headerComment = SyntaxFactory.Comment(comment + Environment.NewLine);
         var newRoot = root?.WithLeadingTrivia(headerComment);
