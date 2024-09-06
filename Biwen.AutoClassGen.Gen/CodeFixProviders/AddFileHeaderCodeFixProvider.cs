@@ -71,7 +71,7 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
         string? author = Environment.UserName;
         string? title = document.Project.Name;
         string? version = document.Project.Version.ToString();
-        string? product = document.Project.AssemblyName;
+        string? product = document.Project.Name;
         string? file = Path.GetFileName(document.FilePath);
 #pragma warning disable CA1305 // 指定 IFormatProvider
         string? date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
