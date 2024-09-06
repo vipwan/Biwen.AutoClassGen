@@ -30,22 +30,17 @@ public class AddFileHeaderCodeFixProviderTest :
     {
         var @code = "namespace Biwen { public interface IRequest {} }";
 
-        var fixedCode = """
+        var fixedCode = $"""
             // Licensed to the TestProject under one or more agreements.
             // The TestProject licenses this file to you under the MIT license.
             // See the LICENSE file in the project root for more information.
-            namespace Biwen { public interface IRequest {} }
+            {@code}
             """;
 
         Diagnostic(FileHeaderAnalyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 1)
             .WithLocation(1, 1);
         ;
-
-        //设置修复器的路径:
-
-
-
 
         await VerifyAnalyzerAsync(@code);
         await VerifyCodeFixAsync(@code, fixedCode);

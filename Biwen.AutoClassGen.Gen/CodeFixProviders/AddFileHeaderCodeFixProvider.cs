@@ -120,11 +120,11 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
 
         //当Assembly为Microsoft.CodeAnalysis.TypedConstant时不做处理
 
-        if (!compilation?.AssemblyName?.StartsWith("Microsoft.CodeAnalysis", StringComparison.Ordinal) is true)
+        if (compilation?.AssemblyName?.StartsWith("Microsoft", StringComparison.Ordinal) is not true)
         {
             var constants = new List<AssemblyConstant>();
-
             var assemblyAttributes = compilation?.Assembly.GetAttributes();
+
             if (assemblyAttributes is not null)
             {
                 foreach (var attribute in assemblyAttributes)
@@ -218,6 +218,7 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
                 }
             }
         }
+
         #endregion
 
         //使用正则表达式替换
@@ -238,7 +239,7 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
                 "TargetFramework" => targetFramework,
                 _ => m.Value,
             };
-        });
+        }, RegexOptions.Singleline);
 
         var headerComment = SyntaxFactory.Comment(comment + Environment.NewLine);
         var newRoot = root?.WithLeadingTrivia(headerComment);
