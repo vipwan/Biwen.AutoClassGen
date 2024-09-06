@@ -1,4 +1,4 @@
-﻿namespace Biwen.AutoClassGen
+﻿namespace Biwen.AutoClassGen.DiagnosticAnalyzers
 {
     using System;
     using System.Collections.Immutable;

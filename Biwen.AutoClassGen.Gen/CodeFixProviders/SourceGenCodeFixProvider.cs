@@ -1,7 +1,7 @@
 ﻿// <copyright file="SourceGenCodeFixProvider.cs" company="PlaceholderCompany">
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
-namespace Biwen.AutoClassGen
+namespace Biwen.AutoClassGen.CodeFixProviders
 {
     using System.Collections.Immutable;
     using System.Composition;

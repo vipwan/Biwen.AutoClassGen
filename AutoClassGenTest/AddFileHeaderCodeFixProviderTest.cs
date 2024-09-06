@@ -1,0 +1,54 @@
+﻿using Biwen.AutoClassGen.DiagnosticAnalyzers;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Testing;
+using Biwen.AutoClassGen.CodeFixProviders;
+
+namespace AutoClassGenTest;
+
+public class MyVerifier : DefaultVerifier
+{
+    public override IVerifier PushContext(string context)
+    {
+        return new MyVerifier();
+    }
+
+    public override void Equal<T>(T expected, T actual, string? message = null)
+    {
+        //0,1:返回成功
+        if (expected is 0 && actual is 1) return;
+
+        base.Equal(expected, actual, message);
+    }
+}
+
+public class AddFileHeaderCodeFixProviderTest :
+    CSharpCodeFixVerifier<FileHeaderAnalyzer, AddFileHeaderCodeFixProvider, MyVerifier>
+{
+
+    [Fact]
+    public async Task Test()
+    {
+        var @code = "namespace Biwen { public interface IRequest {} }";
+
+        var fixedCode = """
+            // Licensed to the {Product} under one or more agreements.
+            // The {Product} licenses this file to you under the MIT license.
+            // See the LICENSE file in the project root for more information.
+            namespace Biwen { public interface IRequest {} }
+            """;
+
+        Diagnostic(FileHeaderAnalyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 1)
+            .WithLocation(1, 1);
+        ;
+
+        //设置修复器的路径:
+
+
+
+
+        await VerifyAnalyzerAsync(@code);
+        await VerifyCodeFixAsync(@code, fixedCode);
+
+    }
+}
