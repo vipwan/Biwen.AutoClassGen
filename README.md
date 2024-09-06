@@ -19,12 +19,37 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 dotnet add package Biwen.AutoClassGen.Attributes
 dotnet add package Biwen.AutoClassGen
 ```
+
+
+### Code Generators
+
 - [Gen DTO Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Dto.md)
 - [Gen Request Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-request.md)
 - [Gen Decoration Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Decor.md)
 - [Gen AutoInject Usage doc](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-AutoInject.md)
 - [Gen Version](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Version.md)
 - [Gen Assembly Metadata](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Metadata.md)
+
+### Code Analyzers
+
+- `GEN001` : 标注接口没有继承基础接口因此不能生成类
+- `GEN011` : 生成类的类名称不可和接口名重名
+- `GEN021` : 推荐使用相同的命名空间
+- `GEN031` : 使用`[AutoGen]`自动生成
+- `GEN041` : 重复标注`[AutoDto]`
+- `GEN042` : 不可在`abstract`类上标注`[AutoDto]`
+- `GEN043` : 标记为`[AutoDecor]`的类必须是`public`的
+- `GEN050` : 文件缺少头部信息
+
+### Code Fixs
+
+- 移除无效的`[AutoDto]`标注
+- 使用`[AutoGen]`自动生成
+- 推荐使用相同的命名空间
+- 文件缺少头部信息
+- .etc
+
+
 
 ### Used by
 #### if you use this library, please tell me, I will add your project here.
