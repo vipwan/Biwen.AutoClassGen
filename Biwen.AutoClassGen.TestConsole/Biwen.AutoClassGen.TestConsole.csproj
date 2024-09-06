@@ -6,8 +6,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Description>This is a test console App</Description>
-		<Copyright>MIT0</Copyright>
-		<Company>万雅虎</Company>
+		<Copyright>MIT</Copyright>
+		<Company>Inc</Company>
 		<Authors>万雅虎</Authors>
 	</PropertyGroup>
 
