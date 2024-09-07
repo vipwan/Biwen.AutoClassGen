@@ -123,16 +123,16 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
             }
         }
 
-        //存在变量引用的版本号,需要解析
+        //存在变量引用的时候,需要解析
         string RawVal(string old, string @default)
         {
             if (old == null)
                 return @default;
 
             //当取得的版本号为变量引用:$(Version)的时候,需要再次解析
-            if (version.StartsWith(VarPrefix, StringComparison.Ordinal))
+            if (old.StartsWith(VarPrefix, StringComparison.Ordinal))
             {
-                var varName = version.Substring(2, version.Length - 3);
+                var varName = old.Substring(2, old.Length - 3);
                 var varMatch = new Regex($@"<{varName}>(.*?)</{varName}>", RegexOptions.Singleline).Match(text);
                 if (varMatch.Success)
                 {
