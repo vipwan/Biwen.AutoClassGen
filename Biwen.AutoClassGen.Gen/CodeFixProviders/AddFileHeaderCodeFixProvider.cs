@@ -5,14 +5,9 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Resources;
-using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +23,7 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
 {
     private const string Title = "添加文件头部信息";
     private const string ConfigFileName = "Biwen.AutoClassGen.Comment";
+    private const string VarPrefix = "$";//变量前缀
 
     private const string DefaultComment = """
         // Licensed to the {Product} under one or more agreements.
@@ -36,25 +32,21 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
         """;
 
 
-    private static readonly HashSet<string> _attributes = [
-    nameof(AssemblyCompanyAttribute),
-        nameof(AssemblyConfigurationAttribute),
-        nameof(AssemblyCopyrightAttribute),
-        nameof(AssemblyCultureAttribute),
-        nameof(AssemblyDelaySignAttribute),
-        nameof(AssemblyDescriptionAttribute),
-        nameof(AssemblyFileVersionAttribute),
-        nameof(AssemblyInformationalVersionAttribute),
-        nameof(AssemblyKeyFileAttribute),
-        nameof(AssemblyKeyNameAttribute),
-        nameof(AssemblyMetadataAttribute),
-        nameof(AssemblyProductAttribute),
-        nameof(AssemblySignatureKeyAttribute),
-        nameof(AssemblyTitleAttribute),
-        nameof(AssemblyTrademarkAttribute),
-        nameof(AssemblyVersionAttribute),
-        nameof(NeutralResourcesLanguageAttribute),
-        nameof(TargetFrameworkAttribute)];
+    #region regex
+
+    private const RegexOptions ROptions = RegexOptions.Compiled | RegexOptions.Singleline;
+    private static readonly Regex VersionRegex = new(@"<Version>(.*?)</Version>", ROptions);
+    private static readonly Regex CopyrightRegex = new(@"<Copyright>(.*?)</Copyright>", ROptions);
+    private static readonly Regex CompanyRegex = new(@"<Company>(.*?)</Company>", ROptions);
+    private static readonly Regex DescriptionRegex = new(@"<Description>(.*?)</Description>", ROptions);
+    private static readonly Regex AuthorsRegex = new(@"<Authors>(.*?)</Authors>", ROptions);
+    private static readonly Regex ProductRegex = new(@"<Product>(.*?)</Product>", ROptions);
+    private static readonly Regex TargetFrameworkRegex = new(@"<TargetFramework>(.*?)</TargetFramework>", ROptions);
+    private static readonly Regex TargetFrameworksRegex = new(@"<TargetFrameworks>(.*?)</TargetFrameworks>", ROptions);
+    private static readonly Regex ImportRegex = new(@"<Import Project=""(.*?)""", ROptions);
+
+    #endregion
+
 
     private readonly record struct AssemblyConstant(string Name, string Value);
 
@@ -109,6 +101,7 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
         string? date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 #pragma warning restore CA1305 // 指定 IFormatProvider
 
+
         if (File.Exists(configFilePath))
         {
             comment = File.ReadAllText(configFilePath, System.Text.Encoding.UTF8);
@@ -116,107 +109,81 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
 
         #region 查找程序集元数据
 
-        var compilation = await document.Project.GetCompilationAsync(ct).ConfigureAwait(false);
-
-        //当Assembly为Microsoft.CodeAnalysis.TypedConstant时不做处理
-
-        if (compilation?.AssemblyName?.StartsWith("Microsoft", StringComparison.Ordinal) is not true)
+        // 加载项目文件:
+        var text = File.ReadAllText(projFilePath, System.Text.Encoding.UTF8);
+        // 载入Import的文件,例如 : <Import Project="..\Version.props" />
+        // 使用正则表达式匹配Project:
+        var importMatchs = ImportRegex.Matches(text);
+        foreach (Match importMatch in importMatchs)
         {
-            var constants = new List<AssemblyConstant>();
-            var assemblyAttributes = compilation?.Assembly.GetAttributes();
-
-            if (assemblyAttributes is not null)
+            var importFile = Path.Combine(projectDirectory, importMatch.Groups[1].Value);
+            if (File.Exists(importFile))
             {
-                foreach (var attribute in assemblyAttributes)
-                {
-                    var name = attribute.AttributeClass?.Name;
-                    if (name == null || !_attributes.Contains(name))
-                        continue;
-
-                    if (attribute.ConstructorArguments.Length == 1)
-                    {
-                        // remove Assembly
-                        if (name.Length > 8 && name.StartsWith("Assembly", StringComparison.Ordinal))
-                            name = name.Substring(8);
-
-                        // remove Attribute
-                        if (name.Length > 9)
-                            name = name.Substring(0, name.Length - 9);
-
-                        var argument = attribute.ConstructorArguments.FirstOrDefault();
-                        var value = argument.ToString() ?? string.Empty;
-
-                        if (string.IsNullOrWhiteSpace(value))
-                            continue;
-
-                        var constant = new AssemblyConstant(name, value);
-                        constants.Add(constant);
-                    }
-                    else if (name == nameof(AssemblyMetadataAttribute) && attribute.ConstructorArguments.Length == 2)
-                    {
-                        var nameArgument = attribute.ConstructorArguments[0];
-                        var key = nameArgument.Value?.ToString() ?? string.Empty;
-
-                        var valueArgument = attribute.ConstructorArguments[1];
-                        var value = valueArgument.ToString() ?? string.Empty;
-
-                        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
-                            continue;
-
-                        // prevent duplicates
-                        if (constants.Any(c => c.Name == key))
-                            continue;
-
-                        var constant = new AssemblyConstant(key, value);
-                        constants.Add(constant);
-                    }
-                }
+                text += File.ReadAllText(importFile);
             }
-            foreach (var constant in constants)
+        }
+
+        //存在变量引用的版本号,需要解析
+        string RawVal(string old, string @default)
+        {
+            if (old == null)
+                return @default;
+
+            //当取得的版本号为变量引用:$(Version)的时候,需要再次解析
+            if (version.StartsWith(VarPrefix, StringComparison.Ordinal))
             {
-                var key = constant.Name;
-                var value = constant.Value;
-
-                switch (key)
+                var varName = version.Substring(2, version.Length - 3);
+                var varMatch = new Regex($@"<{varName}>(.*?)</{varName}>", RegexOptions.Singleline).Match(text);
+                if (varMatch.Success)
                 {
-                    case "Author":
-                        author = value;
-                        break;
-                    case "Company":
-                        company = value;
-                        break;
-                    case "Configuration":
-                        break;
-                    case "Copyright":
-                        copyright = value;
-                        break;
-                    case "Culture":
-                        break;
-                    case "Description":
-                        description = value;
-                        break;
-                    case "FileVersion":
-                        break;
-                    case "InformationalVersion":
-                        break;
-                    case "Product":
-                        product = value;
-                        break;
-                    case "Title":
-                        title = value;
-                        break;
-                    case "Trademark":
-                        break;
-                    case "Version":
-                        version = value;
-                        break;
-                    case "TargetFramework":
-                        targetFramework = value;
-                        break;
-                    default:
-                        break;
+                    return varMatch.Groups[1].Value;
                 }
+                //未找到变量引用,返回默
+                return @default;
             }
+            return old;
+        }
+
+        var versionMatch = VersionRegex.Match(text);
+        var copyrightMath = CopyrightRegex.Match(text);
+        var companyMatch = CompanyRegex.Match(text);
+        var descriptionMatch = DescriptionRegex.Match(text);
+        var authorsMatch = AuthorsRegex.Match(text);
+        var productMatch = ProductRegex.Match(text);
+        var targetFrameworkMatch = TargetFrameworkRegex.Match(text);
+        var targetFrameworksMatch = TargetFrameworksRegex.Match(text);
+
+        if (versionMatch.Success)
+        {
+            version = RawVal(versionMatch.Groups[1].Value, version);
+        }
+        if (copyrightMath.Success)
+        {
+            copyright = RawVal(copyrightMath.Groups[1].Value, copyright);
+        }
+        if (companyMatch.Success)
+        {
+            company = RawVal(companyMatch.Groups[1].Value, company);
+        }
+        if (descriptionMatch.Success)
+        {
+            description = RawVal(descriptionMatch.Groups[1].Value, description);
+        }
+        if (authorsMatch.Success)
+        {
+            author = RawVal(authorsMatch.Groups[1].Value, author);
+        }
+        if (productMatch.Success)
+        {
+            product = RawVal(productMatch.Groups[1].Value, product);
+        }
+        if (targetFrameworkMatch.Success)
+        {
+            targetFramework = RawVal(targetFrameworkMatch.Groups[1].Value, targetFramework);
+        }
+        if (targetFrameworksMatch.Success)
+        {
+            targetFramework = RawVal(targetFrameworksMatch.Groups[1].Value, targetFramework);
         }
 
         #endregion
