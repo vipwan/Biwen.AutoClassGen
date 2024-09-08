@@ -28,7 +28,7 @@
 		<PackageReleaseNotes>add header comment fix</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn>1573;1591;1712;SA1309;RS1035</NoWarn>
+		<NoWarn>1573;1591;1712;SA1309;RS1035;CA1812</NoWarn>
 	</PropertyGroup>
 
 	<!--开发调试阶段-->

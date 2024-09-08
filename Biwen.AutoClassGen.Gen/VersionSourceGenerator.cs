@@ -1,8 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-using System.IO;
-using System.Text.RegularExpressions;
+﻿using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Biwen.AutoClassGen;
 

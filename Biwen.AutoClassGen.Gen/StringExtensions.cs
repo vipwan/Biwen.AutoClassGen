@@ -1,7 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-
-namespace Biwen.AutoClassGen;
+﻿namespace Biwen.AutoClassGen;
 
 internal static class StringExtensions
 {

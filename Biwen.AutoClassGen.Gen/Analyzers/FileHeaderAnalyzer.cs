@@ -1,17 +1,13 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
 
-namespace Biwen.AutoClassGen.DiagnosticAnalyzers;
+namespace Biwen.AutoClassGen.Analyzers;
 
 /// <summary>
 /// 文件头部分析器
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class FileHeaderAnalyzer : DiagnosticAnalyzer
+internal class FileHeaderAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "GEN050";
     private static readonly LocalizableString Title = "文件缺少头部信息";
@@ -40,12 +36,14 @@ public class FileHeaderAnalyzer : DiagnosticAnalyzer
         var firstToken = root.GetFirstToken();
 
         // 检查文件是否以注释开头
-        var hasHeaderComment = firstToken.LeadingTrivia.Any(trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia));
+        var hasHeaderComment = firstToken.LeadingTrivia.Any(trivia =>
+        trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) ||
+        trivia.IsKind(SyntaxKind.MultiLineCommentTrivia));
 
-        if (!hasHeaderComment)
-        {
-            var diagnostic = Diagnostic.Create(Rule, Location.Create(context.Tree, TextSpan.FromBounds(0, 0)));
-            context.ReportDiagnostic(diagnostic);
-        }
+        if (hasHeaderComment)
+            return;
+
+        var diagnostic = Diagnostic.Create(Rule, Location.Create(context.Tree, TextSpan.FromBounds(0, 0)));
+        context.ReportDiagnostic(diagnostic);
     }
 }

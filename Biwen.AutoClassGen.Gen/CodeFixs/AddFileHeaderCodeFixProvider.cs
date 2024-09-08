@@ -1,9 +1,6 @@
-﻿using Biwen.AutoClassGen.DiagnosticAnalyzers;
-using Microsoft.CodeAnalysis;
+﻿using Biwen.AutoClassGen.Analyzers;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Immutable;
 using System.Composition;
@@ -12,14 +9,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Biwen.AutoClassGen.CodeFixProviders;
+namespace Biwen.AutoClassGen.CodeFixs;
 
 /// <summary>
 /// 自动给文件添加头部注释
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AddFileHeaderCodeFixProvider))]
 [Shared]
-public class AddFileHeaderCodeFixProvider : CodeFixProvider
+internal class AddFileHeaderCodeFixProvider : CodeFixProvider
 {
     private const string Title = "添加文件头部信息";
     private const string ConfigFileName = "Biwen.AutoClassGen.Comment";
@@ -50,15 +47,10 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
 
     private readonly record struct AssemblyConstant(string Name, string Value);
 
-    public sealed override ImmutableArray<string> FixableDiagnosticIds
-    {
-        get { return [FileHeaderAnalyzer.DiagnosticId]; }
-    }
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => [FileHeaderAnalyzer.DiagnosticId];
 
-    public sealed override FixAllProvider GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
+    public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -208,14 +200,10 @@ public class AddFileHeaderCodeFixProvider : CodeFixProvider
             };
         }, RegexOptions.Singleline);
 
-        var headerComment = SyntaxFactory.Comment(comment + Environment.NewLine);
-        var newRoot = root?.WithLeadingTrivia(headerComment);
-        if (newRoot == null)
-        {
-            return document;
-        }
-        var newDocument = document.WithSyntaxRoot(newRoot);
+        var newRoot = root?.WithLeadingTrivia(SyntaxFactory.Comment(comment + Environment.NewLine));
 
-        return newDocument;
+        return newRoot is not null
+            ? document.WithSyntaxRoot(newRoot)
+            : document;
     }
 }
