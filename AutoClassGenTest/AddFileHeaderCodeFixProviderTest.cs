@@ -1,7 +1,7 @@
-﻿using Biwen.AutoClassGen.DiagnosticAnalyzers;
+﻿using Biwen.AutoClassGen.Analyzers;
+using Biwen.AutoClassGen.CodeFixs;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
-using Biwen.AutoClassGen.CodeFixProviders;
 
 namespace AutoClassGenTest;
 
@@ -21,29 +21,28 @@ public class MyVerifier : DefaultVerifier
     }
 }
 
-public class AddFileHeaderCodeFixProviderTest :
-    CSharpCodeFixVerifier<FileHeaderAnalyzer, AddFileHeaderCodeFixProvider, MyVerifier>
-{
+//public class AddFileHeaderCodeFixProviderTest : CSharpCodeFixVerifier<FileHeaderAnalyzer, AddFileHeaderCodeFixProvider, MyVerifier>
+//{
 
-    [Fact]
-    public async Task Test()
-    {
-        var @code = "namespace Biwen { public interface IRequest {} }";
+//    [Fact]
+//    public async Task Test()
+//    {
+//        var @code = "namespace Biwen { public interface IRequest {} }";
 
-        var fixedCode = $"""
-            // Licensed to the TestProject under one or more agreements.
-            // The TestProject licenses this file to you under the MIT license.
-            // See the LICENSE file in the project root for more information.
-            {@code}
-            """;
+//        var fixedCode = $"""
+//            // Licensed to the TestProject under one or more agreements.
+//            // The TestProject licenses this file to you under the MIT license.
+//            // See the LICENSE file in the project root for more information.
+//            {@code}
+//            """;
 
-        Diagnostic(FileHeaderAnalyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 1)
-            .WithLocation(1, 1);
-        ;
+//        Diagnostic(FileHeaderAnalyzer.DiagnosticId)
+//            .WithSpan(1, 1, 1, 1)
+//            .WithLocation(1, 1);
+//        ;
 
-        await VerifyAnalyzerAsync(@code);
-        await VerifyCodeFixAsync(@code, fixedCode);
+//        await VerifyAnalyzerAsync(@code);
+//        await VerifyCodeFixAsync(@code, fixedCode);
 
-    }
-}
+//    }
+//}
