@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Biwen.AutoClassGen.Analyzers;
 
@@ -39,6 +40,77 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
 
         var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
+
+        //如果方法是重写的方法则不检查
+        if (methodDeclaration.Modifiers.Any(SyntaxKind.OverrideKeyword))
+        {
+            return;
+        }
+
+        //如果方法的父亲是类,且该方法是接口的实现方法则不检查
+        if (methodDeclaration.Parent is ClassDeclarationSyntax parent)
+        {
+            #region 处理MVC Controller
+
+            //如果parent是Controller则不检查,判断名称是否包含结尾Controller
+            if (parent.Identifier.Text.EndsWith("Controller", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            //如果parent是ApiController则不检查
+            if (parent.AttributeLists.SelectMany(a => a.Attributes)
+                .Any(a => a.Name.ToString() == "ApiController"))
+            {
+                return;
+            }
+
+            //返回IActionResult的方法不检查
+            if (methodDeclaration.ReturnType is IdentifierNameSyntax action && action.Identifier.Text == "IActionResult")
+            {
+                return;
+            }
+            //返回Task<IActionResult>的方法不检查
+            if (methodDeclaration.ReturnType is GenericNameSyntax genericName && genericName.Identifier.Text == "Task" &&
+                genericName.TypeArgumentList.Arguments.Count == 1)
+            {
+                var typeArgument = genericName.TypeArgumentList.Arguments[0];
+                if (typeArgument is IdentifierNameSyntax gAction && gAction.Identifier.Text == "IActionResult")
+                {
+                    return;
+                }
+            }
+
+            #endregion
+
+            #region 不处理Microsoft.AspNetCore.SignalR.Hub
+
+            if (context.ContainingSymbol!.ContainingSymbol is ITypeSymbol { } hubSymbol)
+            {
+                //如果parent是Hub 和 Hub<T>则不检查
+                if (hubSymbol?.BaseType?.ToDisplayString().Contains("Microsoft.AspNetCore.SignalR.Hub") is true)
+                {
+                    return;
+                }
+            }
+
+            #endregion
+
+
+            if (context.ContainingSymbol!.ContainingSymbol is ITypeSymbol { } parentSymbol)
+            {
+                //查询parentSymbol的祖先符号.如果祖先符号存在当前方法则不检查
+                var interfaceSymbols = parentSymbol.AllInterfaces;
+                foreach (var interfaceSymbol in interfaceSymbols)
+                {
+                    if (interfaceSymbol.GetMembers(methodDeclaration.Identifier.Text)
+                        .Any(m => m.Kind == SymbolKind.Method && m.Name == methodDeclaration.Identifier.Text))
+                    {
+                        return;
+                    }
+                }
+            }
+        }
 
         //如果包含Async关键字
         if (methodDeclaration.Modifiers.Any(SyntaxKind.AsyncKeyword))

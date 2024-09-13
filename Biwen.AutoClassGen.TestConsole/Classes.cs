@@ -7,6 +7,8 @@
 
 
 using Biwen.AutoClassGen.TestConsole.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Biwen.AutoClassGen.Models
 {
@@ -26,7 +28,16 @@ namespace Biwen.AutoClassGen.Models
     }
 
 
-    public class MyClass
+    public interface IMyInterface
+    {
+        string? Id { get; set; }
+        string? Email { get; set; }
+
+        Task MyMethod();
+    }
+
+
+    public class MyClass : IMyInterface
     {
         public string? Id { get; set; }
         public string? Email { get; set; }
@@ -38,6 +49,37 @@ namespace Biwen.AutoClassGen.Models
         public async Task Get2()
         {
             await Task.CompletedTask;
+        }
+
+        public Task MyMethod()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+
+    [ApiController]
+    public class MyController4
+    {
+        public Task MyMethod()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    public class MyHub : Hub
+    {
+        public Task MyMethod()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    public class MyHub2 : Hub<MyController4>
+    {
+        public Task MyMethod()
+        {
+            return Task.CompletedTask;
         }
     }
 
