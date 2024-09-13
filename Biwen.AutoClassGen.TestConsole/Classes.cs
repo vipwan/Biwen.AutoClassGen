@@ -51,15 +51,15 @@ namespace Biwen.AutoClassGen.Models
             await Task.CompletedTask;
         }
 
+        //继承的接口中有同名方法，分析器会排除掉这个方法
         public Task MyMethod()
         {
             return Task.CompletedTask;
         }
     }
 
-
-    [ApiController]
-    public class MyController4
+    //分析器会排除掉这个类
+    public class MyController
     {
         public Task MyMethod()
         {
@@ -67,6 +67,17 @@ namespace Biwen.AutoClassGen.Models
         }
     }
 
+    //分析器会排除掉这个类
+    [ApiController]
+    public class MyCtor
+    {
+        public Task MyMethod()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    //分析器会排除掉这个类
     public class MyHub : Hub
     {
         public Task MyMethod()
@@ -75,7 +86,8 @@ namespace Biwen.AutoClassGen.Models
         }
     }
 
-    public class MyHub2 : Hub<MyController4>
+    //分析器会排除掉这个类
+    public class MyHub2 : Hub<MyCtor>
     {
         public Task MyMethod()
         {
