@@ -38,14 +38,14 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
 
+        var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
+
         //如果包含Async关键字
         if (methodDeclaration.Modifiers.Any(SyntaxKind.AsyncKeyword))
         {
             if (!methodDeclaration.Identifier.Text.EndsWith(AsyncSuffix, StringComparison.OrdinalIgnoreCase))
             {
-                var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
                 context.ReportDiagnostic(diagnostic);
-
                 return;
             }
         }
@@ -60,9 +60,7 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
             {
                 if (!methodDeclaration.Identifier.Text.EndsWith(AsyncSuffix, StringComparison.OrdinalIgnoreCase))
                 {
-                    var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
                     context.ReportDiagnostic(diagnostic);
-
                     return;
                 }
             }
@@ -71,9 +69,7 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
         {
             if (!methodDeclaration.Identifier.Text.EndsWith(AsyncSuffix, StringComparison.OrdinalIgnoreCase))
             {
-                var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
                 context.ReportDiagnostic(diagnostic);
-
                 return;
             }
         }
