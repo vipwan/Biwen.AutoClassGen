@@ -24,4 +24,21 @@ namespace Biwen.AutoClassGen.Models
     {
 
     }
+
+
+    public class MyClass
+    {
+        public string? Id { get; set; }
+        public string? Email { get; set; }
+
+        public Task Get()
+        {
+            return Task.CompletedTask;
+        }
+        public async Task Get2()
+        {
+            await Task.CompletedTask;
+        }
+    }
+
 }

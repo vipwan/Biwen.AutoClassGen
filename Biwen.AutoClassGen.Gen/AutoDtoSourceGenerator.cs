@@ -167,6 +167,8 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
                 bodyInnerBuilder.AppendLine();
 
+                List<string> haveProps = [];
+
                 // 生成属性
                 void GenProperty(TypeSyntax @type)
                 {
@@ -183,6 +185,14 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                         {
                             if (!excapes.Contains(prop.Name))
                             {
+                                // 如果存在同名属性,则不生成
+                                if (haveProps.Contains(prop.Name))
+                                {
+                                    return;
+                                }
+
+                                haveProps.Add(prop.Name);
+
                                 // prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
                                 // body:
@@ -342,6 +352,8 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
                 bodyInnerBuilder.AppendLine();
 
+                List<string> haveProps = [];
+
                 // 生成属性
                 void GenProperty(TypeSyntax @type)
                 {
@@ -358,6 +370,14 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                         {
                             if (!excapes.Contains(prop.Name))
                             {
+                                // 如果存在同名属性,则不生成
+                                if (haveProps.Contains(prop.Name))
+                                {
+                                    return;
+                                }
+
+                                haveProps.Add(prop.Name);
+
                                 // prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
                                 // body:

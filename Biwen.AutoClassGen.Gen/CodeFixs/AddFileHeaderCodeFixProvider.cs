@@ -28,7 +28,6 @@ internal class AddFileHeaderCodeFixProvider : CodeFixProvider
         // See the LICENSE file in the project root for more information.
         """;
 
-
     #region regex
 
     private const RegexOptions ROptions = RegexOptions.Compiled | RegexOptions.Singleline;
@@ -44,13 +43,11 @@ internal class AddFileHeaderCodeFixProvider : CodeFixProvider
 
     #endregion
 
-
     private readonly record struct AssemblyConstant(string Name, string Value);
 
     public sealed override ImmutableArray<string> FixableDiagnosticIds => [FileHeaderAnalyzer.DiagnosticId];
 
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
-
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -67,12 +64,14 @@ internal class AddFileHeaderCodeFixProvider : CodeFixProvider
         return Task.CompletedTask;
     }
 
-
 #pragma warning disable IDE0060 // 删除未使用的参数
     private static async Task<Document> FixDocumentAsync(Document document, TextSpan span, CancellationToken ct)
 #pragma warning restore IDE0060 // 删除未使用的参数
     {
         var root = await document.GetSyntaxRootAsync(ct).ConfigureAwait(false);
+
+        if (root == null)
+            return document;
 
         //从项目配置中获取文件头部信息
         var projFilePath = document.Project.FilePath ?? "C:\\test.csproj";//单元测试时没有文件路径,因此使用默认路径
@@ -202,10 +201,7 @@ internal class AddFileHeaderCodeFixProvider : CodeFixProvider
             };
         }, RegexOptions.Singleline);
 
-        var newRoot = root?.WithLeadingTrivia(SyntaxFactory.Comment(comment + Environment.NewLine));
-
-        return newRoot is not null
-            ? document.WithSyntaxRoot(newRoot)
-            : document;
+        var newRoot = root.WithLeadingTrivia(SyntaxFactory.Comment(comment + Environment.NewLine));
+        return document.WithSyntaxRoot(newRoot);
     }
 }
