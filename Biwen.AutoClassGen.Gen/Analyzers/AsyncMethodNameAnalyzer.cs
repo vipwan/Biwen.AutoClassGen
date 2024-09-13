@@ -45,6 +45,8 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
             {
                 var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
                 context.ReportDiagnostic(diagnostic);
+
+                return;
             }
         }
 
@@ -60,6 +62,8 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
                 {
                     var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
                     context.ReportDiagnostic(diagnostic);
+
+                    return;
                 }
             }
         }
@@ -69,6 +73,8 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
             {
                 var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
                 context.ReportDiagnostic(diagnostic);
+
+                return;
             }
         }
     }
