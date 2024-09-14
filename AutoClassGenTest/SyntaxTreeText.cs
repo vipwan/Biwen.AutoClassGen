@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AutoClassGenTest;
@@ -26,6 +27,10 @@ public class SyntaxTreeText
         {
             public record HelloBody(string name, int age);
 
+            /// <summary>
+            /// 测试方法
+            /// </summary>
+            /// <param name="HelloBody">body</param>
             public string Hello(HelloBody helloBody)
             {
                 var str = $"Hello {helloBody.name}";
@@ -205,7 +210,58 @@ public class SyntaxTreeText
 
     }
 
+    [Fact]
+    public void 查询方法的注释信息()
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText(SourceText);
+        var root = syntaxTree.GetRoot();
+        var classes = root.DescendantNodes().OfType<ClassDeclarationSyntax>().ToList();
+        var methods = classes[0].DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+
+        // 获取方法的注释
+        var trivia = methods[0].GetLeadingTrivia()
+                           .Select(i => i.GetStructure())
+                           .OfType<DocumentationCommentTriviaSyntax>()
+                           .FirstOrDefault();
 
 
+        Assert.NotNull(trivia);
+
+        // 查找summary节点
+        var summarys = trivia.Content.OfType<XmlElementSyntax>();
+
+        Assert.Equal(2, summarys.Count());
+
+        var summary = summarys.First();
+
+        Assert.Equal("summary", summary.StartTag.Name.LocalName.Text);
+
+        // 获取summary的内容
+        var summaryContent = summary.Content;
+
+        //SyntaxToken XmlTextLiteralToken  测试方法
+        var content = summaryContent[0].ChildTokens().FirstOrDefault(x => x.Text.Trim().Length > 0);
+        Assert.Contains("测试方法", content.Text);
+
+        // 获取param节点
+        var param = summarys.FirstOrDefault(x => x.StartTag.Name.LocalName.Text == "param");
+
+        Assert.NotNull(param);
+
+        // 获取param的内容
+        var paramContent = param.Content;
+        Assert.Contains("body", paramContent.ToString());
+
+        // 获取param的name属性
+        var name = param.StartTag.Attributes.FirstOrDefault(x => x.Name.LocalName.Text == "name");
+        Assert.NotNull(name);
+        Assert.Contains("HelloBody", name.ToString());
+
+
+
+
+
+
+    }
 
 }
