@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Biwen.AutoClassGen.Analyzers;
@@ -35,6 +36,29 @@ internal class ClassToRecordAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
     {
+        var syntaxTree = context.Node.SyntaxTree;
+
+        // 获取C#语言版本
+        var parseOptions = (CSharpParseOptions)syntaxTree.Options;
+        var languageVersion = parseOptions.LanguageVersion;
+        // 如果语言版本小于C#9则不转换
+        if (languageVersion < LanguageVersion.CSharp9)
+            return;
+
+        // 如果是NETFramework项目则不转换
+        // 获取Compilation
+        var compilation = context.SemanticModel.Compilation;
+
+        // 获取目标框架
+        var targetFramework = compilation.Options.Platform;
+
+        // 检查是否为 .NET Framework
+        bool isDotNetFramework = compilation.ReferencedAssemblyNames
+            .Any(assembly => assembly.Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase));
+
+        if (isDotNetFramework)
+            return;
+
         var classDeclaration = (ClassDeclarationSyntax)context.Node;
 
         // 如果类已经继承了其他类，则不转换
