@@ -1,16 +1,24 @@
-﻿namespace Biwen.AutoClassGen.TestConsole.Services2;
-
-/// <summary>
-/// 测试服务
-/// </summary>
-[AutoInject]
-[AutoInject]
-public class MyService
+﻿namespace Biwen.AutoClassGen.TestConsole.Services2
 {
-    public string Hello(string name)
+
+    /// <summary>
+    /// 测试服务
+    /// </summary>
+    [AutoInject]
+    [AutoInject]
+    public class MyService
     {
-        var str = $"Hello {name}";
-        Console.WriteLine(str);
-        return str;
+        public string Hello(string name)
+        {
+            var str = $"Hello {name}";
+            Console.WriteLine(str);
+            return str;
+        }
+
+        public class SubClass
+        {
+            public string? Name { get; set; }
+        }
+
     }
 }

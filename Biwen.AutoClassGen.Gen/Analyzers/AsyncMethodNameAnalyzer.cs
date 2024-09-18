@@ -47,7 +47,6 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        //如果方法的父亲是类,且该方法是接口的实现方法则不检查
         if (methodDeclaration.Parent is ClassDeclarationSyntax parent)
         {
             #region 处理MVC Controller
@@ -96,7 +95,7 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
 
             #endregion
 
-
+            //如果方法的父亲是类,且该方法是接口的实现方法则不检查
             if (context.ContainingSymbol!.ContainingSymbol is ITypeSymbol { } parentSymbol)
             {
                 //查询parentSymbol的祖先符号.如果祖先符号存在当前方法则不检查
