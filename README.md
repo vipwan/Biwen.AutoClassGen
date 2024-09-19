@@ -42,7 +42,8 @@ dotnet add package Biwen.AutoClassGen
 - `GEN050` : 文件缺少头部信息
 - `GEN051` : 异步方法应该以`Async`结尾
 - `GEN052` : 建议使用文件范围命名空间
-
+- `GEN053` : 源代码非`UTF-8`编码
+ 
 ### Code Fixs
 
 - 移除无效的`[AutoDto]`标注
