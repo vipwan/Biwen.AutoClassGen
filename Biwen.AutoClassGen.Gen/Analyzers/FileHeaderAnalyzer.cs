@@ -32,9 +32,16 @@ internal class FileHeaderAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeSyntaxTree(SyntaxTreeAnalysisContext context)
     {
-        var root = context.Tree.GetRoot(context.CancellationToken);
-        var firstToken = root.GetFirstToken();
+        var root = (CompilationUnitSyntax)context.Tree.GetRoot(context.CancellationToken);
 
+        if (root is null)
+            return;
+
+        //如果cs代码不包含编译信息,直接返回
+        if (root.AttributeLists.Count == 0 && root.Usings.Count == 0 && root.Members.Count == 0)
+            return;
+
+        var firstToken = root.GetFirstToken();
         // 检查文件是否以注释开头
         var hasHeaderComment = firstToken.LeadingTrivia.Any(trivia =>
         trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) ||
