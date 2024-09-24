@@ -1,7 +1,6 @@
 ﻿// <copyright file="AutoDecorSourceGenerator.cs" company="vipwan">
 //MIT Copyright (c) vipwan. All rights reserved.
 // </copyright>
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;

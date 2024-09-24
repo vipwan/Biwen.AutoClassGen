@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using Microsoft.CodeAnalysis;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Biwen.AutoClassGen.Analyzers;
@@ -35,6 +36,10 @@ internal class FileHeaderAnalyzer : DiagnosticAnalyzer
         var root = (CompilationUnitSyntax)context.Tree.GetRoot(context.CancellationToken);
 
         if (root is null)
+            return;
+
+        //针对Codefirst模式生成的,cs源代码路径包含:`Migrations`的不检查
+        if (root.SyntaxTree.FilePath.Split(['/', '\\']).Any(x => x == "Migrations"))
             return;
 
         //如果cs代码不包含编译信息,直接返回

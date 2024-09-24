@@ -1,7 +1,6 @@
 ﻿using Biwen.AutoClassGen.Analyzers;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.IO;

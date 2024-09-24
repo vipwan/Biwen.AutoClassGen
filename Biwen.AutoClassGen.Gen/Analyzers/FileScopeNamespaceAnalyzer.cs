@@ -33,6 +33,16 @@ internal class FileScopeNamespaceAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeNamespace(SyntaxNodeAnalysisContext context)
     {
         var syntaxTree = context.Node.SyntaxTree;
+
+        //针对Codefirst模式生成的,cs源代码路径包含:`Migrations`的不检查
+        if (syntaxTree.FilePath.Split(['/', '\\']).Any(x => x == "Migrations"))
+            return;
+
+        //不检测Program.cs
+        if (syntaxTree.FilePath.EndsWith("Program.cs", StringComparison.OrdinalIgnoreCase))
+            return;
+
+
         // 获取C#语言版本
         var parseOptions = (CSharpParseOptions)syntaxTree.Options;
         var languageVersion = parseOptions.LanguageVersion;
