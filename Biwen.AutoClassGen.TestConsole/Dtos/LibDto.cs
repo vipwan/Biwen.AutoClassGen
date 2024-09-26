@@ -19,3 +19,21 @@ public partial class LibDto
 public class LibDto2 //warning
 {
 }
+
+
+[AutoDto<TImplClass>]
+public partial class TDto
+{
+}
+
+public class TClass<T>
+{
+    public T? Id { get; set; }
+
+    public string? Hello { get; set; }
+}
+
+public class TImplClass : TClass<string>
+{
+    public string? World { get; set; }
+}

@@ -200,6 +200,12 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
                                 haveProps.Add(prop.Name);
 
+                                //如果是泛型属性,则不生成
+                                if (prop.ContainingType.TypeParameters.Any(x => x.Name == prop.Type.Name))
+                                {
+                                    return;
+                                }
+
                                 // prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
                                 // body:
@@ -405,6 +411,12 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                 }
 
                                 haveProps.Add(prop.Name);
+
+                                //如果是泛型属性,则不生成
+                                if (prop.ContainingType.TypeParameters.Any(x => x.Name == prop.Type.Name))
+                                {
+                                    return;
+                                }
 
                                 // prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
