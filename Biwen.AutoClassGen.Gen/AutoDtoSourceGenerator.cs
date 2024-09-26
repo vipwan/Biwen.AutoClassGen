@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.CodeAnalysis;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -171,7 +172,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 // 生成属性
                 void GenProperty(TypeSyntax @type)
                 {
-                    var symbols = compilation.GetSymbolsWithName(type.ToString());
+                    var symbols = compilation.GetSymbolsWithName(type.ToString(), SymbolFilter.Type);
                     foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
                     {
                         var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
@@ -369,7 +370,10 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 // 生成属性
                 void GenProperty(TypeSyntax @type)
                 {
-                    var symbols = compilation.GetSymbolsWithName(type.ToString());
+                    //无法将类型为“Microsoft.CodeAnalysis.CSharp.Symbols.PublicModel.PropertySymbol”
+                    //的对象强制转换为类型“Microsoft.CodeAnalysis.ITypeSymbol
+                    var symbols = compilation.GetSymbolsWithName(@type.ToString(), SymbolFilter.Type);
+
                     foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
                     {
                         var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
