@@ -1,7 +1,14 @@
-﻿namespace Biwen.AutoClassGen.TestConsole.Dtos
-{
-    using Biwen.AutoClassGen.TestConsole.Entitys;
+﻿// Licensed to the Test Console App under one or more agreements.
+// The Test Console App licenses this file to you under the MIT license. 
+// See the LICENSE file in the project root for more information.13456789
+// This is a test console App
+// Test Console App UserDto.cs 
+// 2024-09-26 16:17:44  Biwen.AutoClassGen.TestConsole 万雅虎
 
+using Biwen.AutoClassGen.TestConsole.Entitys;
+
+namespace Biwen.AutoClassGen.TestConsole.Dtos
+{
     /// <summary>
     /// to be generated
     /// </summary>

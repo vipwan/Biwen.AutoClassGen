@@ -342,7 +342,20 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 }
 
                 var className = node.Identifier.ValueText;
-                var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
+
+                var rootNamespace = string.Empty;
+
+                //获取文件范围的命名空间
+                var filescopeNamespace = node.AncestorsAndSelf().OfType<FileScopedNamespaceDeclarationSyntax>().FirstOrDefault();
+
+                if (filescopeNamespace != null)
+                {
+                    rootNamespace = filescopeNamespace.Name.ToString();
+                }
+                else
+                {
+                    rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
+                }
 
                 StringBuilder bodyBuilder = new();
                 List<string> namespaces = [];
@@ -397,6 +410,11 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 // 生成属性:
                 var symbols = compilation.GetSymbolsWithName(entityName, SymbolFilter.Type);
                 var symbol = symbols.Cast<ITypeSymbol>().FirstOrDefault();
+
+                //引用了其他库.
+                if (symbol is null)
+                    continue;
+
                 GenProperty(SyntaxFactory.ParseTypeName(symbol.MetadataName));
 
                 // 生成父类的属性:
