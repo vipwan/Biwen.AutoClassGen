@@ -10,7 +10,12 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestLib;
 
 //非同一代码库下,不会生成
-[AutoDto<TestClass1>]
+[AutoDto<TestClass1>] //warning
 public partial class LibDto
+{
+}
+
+[AutoDto<TestClass1>] //warning
+public class LibDto2 //warning
 {
 }
