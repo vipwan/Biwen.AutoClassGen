@@ -40,6 +40,7 @@ dotnet add package Biwen.AutoClassGen
 - `GEN042` : 不可在`abstract`类上标注`[AutoDto]`
 - `GEN043` : 标记为`[AutoDecor]`的类必须是`public`的
 - `GEN044` : `[AutoDto]`引用了外部类是不允许的
+- `GEN045` : `[AutoDto]`标注的类必须是partial类
 - `GEN050` : 文件缺少头部信息
 - `GEN051` : 异步方法应该以`Async`结尾
 - `GEN052` : 建议使用文件范围命名空间
