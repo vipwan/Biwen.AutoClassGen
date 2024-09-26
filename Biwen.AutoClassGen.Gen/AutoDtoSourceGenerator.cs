@@ -83,6 +83,12 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
         foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
         {
+            //如果不含partial关键字,则不生成
+            if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
+            {
+                continue;
+            }
+
             AttributeSyntax? attributeSyntax = null;
             foreach (var attr in node.AttributeLists.AsEnumerable())
             {
@@ -97,6 +103,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             {
                 continue;
             }
+
 
             //转译的Entity类名
             var entityName = string.Empty;
@@ -278,6 +285,12 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
         foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
         {
+            //如果不含partial关键字,则不生成
+            if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
+            {
+                continue;
+            }
+
             AttributeSyntax? attributeSyntax = null;
             foreach (var attr in node.AttributeLists.AsEnumerable())
             {
@@ -292,7 +305,6 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             {
                 continue;
             }
-
 
             //转译的Entity类名
             var entityName = string.Empty;
