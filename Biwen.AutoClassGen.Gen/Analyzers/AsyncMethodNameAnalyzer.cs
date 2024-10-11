@@ -40,6 +40,20 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
 
         var diagnostic = Diagnostic.Create(Rule, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text);
 
+        #region 如果项目是测试项目,则不检查
+
+        //判断代码所在项目是否是测试项目,xUnit,NUnit,MSTest
+        var istestProj = context.SemanticModel.Compilation.ReferencedAssemblyNames.Any(
+            a =>
+            a.Name == "MSTest.TestFramework" ||
+            a.Name == "xunit.core" ||
+            a.Name == "nunit.framework");
+
+        if (istestProj)
+            return;
+
+        #endregion
+
         //如果方法是重写的方法则不检查
         if (methodDeclaration.Modifiers.Any(SyntaxKind.OverrideKeyword))
         {

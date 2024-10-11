@@ -42,6 +42,20 @@ internal class FileScopeNamespaceAnalyzer : DiagnosticAnalyzer
         if (syntaxTree.FilePath.EndsWith("Program.cs", StringComparison.OrdinalIgnoreCase))
             return;
 
+        #region 如果项目是测试项目,则不检查
+
+        //判断代码所在项目是否是测试项目,xUnit,NUnit,MSTest
+        var istestProj = context.SemanticModel.Compilation.ReferencedAssemblyNames.Any(
+            a =>
+            a.Name == "MSTest.TestFramework" ||
+            a.Name == "xunit.core" ||
+            a.Name == "nunit.framework");
+
+        if (istestProj)
+            return;
+
+        #endregion
+
 
         // 获取C#语言版本
         var parseOptions = (CSharpParseOptions)syntaxTree.Options;

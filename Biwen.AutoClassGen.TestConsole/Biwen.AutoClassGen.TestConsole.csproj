@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Biwen.AutoClassGen.TestLib\Biwen.AutoClassGen.TestLib.csproj" />
+		<ProjectReference Include="..\Biwen.AutoClassGen.TestLib\Biwen.AutoClassGen.TestLib.csproj" />
 	</ItemGroup>
 
 
