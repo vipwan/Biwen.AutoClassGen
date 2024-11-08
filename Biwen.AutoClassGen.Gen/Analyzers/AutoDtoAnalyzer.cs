@@ -4,6 +4,7 @@
 
 using System.Collections.Immutable;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Biwen.AutoClassGen.Analyzers;
@@ -14,6 +15,9 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     public const string DiagnosticIdGEN044 = "GEN044";
     public const string DiagnosticIdGEN045 = "GEN045";
 
+    public const string DiagnosticIdGEN041 = "GEN041";
+    public const string DiagnosticIdGEN042 = "GEN042";
+
     private static readonly LocalizableString Title = "不可使用外部库生成DTO";
     private static readonly LocalizableString MessageFormat = "不可使用外部库生成DTO";
     private static readonly LocalizableString Description = "不可使用外部库生成DTO.";
@@ -21,6 +25,18 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString Title2 = "标注的类必须是partial类";
     private static readonly LocalizableString MessageFormat2 = "标注的类必须是partial类";
     private static readonly LocalizableString Description2 = "标注的类必须是partial类.";
+
+    private static readonly LocalizableString Title3 = "不可标注到abstract类";
+    private static readonly LocalizableString MessageFormat3 = "不可标注到abstract类";
+    private static readonly LocalizableString Description3 = "不可标注到abstract类.";
+
+    private static readonly LocalizableString TitleGEN041GEN041 = "重复标注[AutoDto]";
+    private static readonly LocalizableString MessageFormatGEN041 = "重复标注了[AutoDto],请删除多余的标注";
+    private static readonly LocalizableString DescriptionGEN041 = "重复标注[AutoDto].";
+
+
+
+
 
     private const string Category = "GEN";
 
@@ -32,8 +48,21 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     DiagnosticIdGEN045, Title2, MessageFormat2, Category,
     DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description2);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        [RuleGEN044, RuleGEN045];
+    private static readonly DiagnosticDescriptor RuleGEN041 = new(
+    DiagnosticIdGEN041, TitleGEN041GEN041, MessageFormatGEN041, Category,
+    DiagnosticSeverity.Error, isEnabledByDefault: true, description: DescriptionGEN041);
+
+
+    private static readonly DiagnosticDescriptor RuleGEN042 = new(
+    DiagnosticIdGEN042, Title3, MessageFormat3, Category,
+    DiagnosticSeverity.Error, isEnabledByDefault: true, description: Description3);
+
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [
+        RuleGEN041,
+        RuleGEN042,
+        RuleGEN044,
+        RuleGEN045];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -51,6 +80,15 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
 
         if (attributeLists.Count == 0)
             return;
+
+        //如果被标记的类重复标注[AutoDto],则不生成:
+        //同时包含泛型和非泛型的情况
+        if (attributeLists.SelectMany(x => x.Attributes).Where(x => x.Name.ToString().IndexOf("AutoDto", StringComparison.Ordinal) == 0).Count() > 1)
+        {
+            var location = Location.Create(classDeclaration.SyntaxTree, TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
+            // issue error
+            context.ReportDiagnostic(Diagnostic.Create(RuleGEN041, location));
+        }
 
         foreach (var attributeList in attributeLists)
         {
@@ -71,6 +109,25 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
                     context.ReportDiagnostic(diagnostic);
                 }
 
+                //如果被标记的类重复标注[AutoDto],则不生成:
+                //同时包含泛型和非泛型的情况
+                if (attributeList.Attributes.Where(x => x.Name.ToString().IndexOf("AutoDto", StringComparison.Ordinal) == 0).Count() > 1)
+                {
+                    var location = attributeList.GetLocation();
+                    // issue error
+                    context.ReportDiagnostic(Diagnostic.Create(RuleGEN041, location));
+                }
+
+                //如果被标记的类是抽象类,则不生成:
+                if (classDeclaration.Modifiers.Any(SyntaxKind.AbstractKeyword))
+                {
+                    //定位到类的第一行 0~class关键字结束位置:
+                    var location = Location.Create(classDeclaration.SyntaxTree,
+                        TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start,
+                        classDeclaration.Identifier.Span.End));
+                    var diagnostic = Diagnostic.Create(RuleGEN042, location);
+                    context.ReportDiagnostic(diagnostic);
+                }
 
                 if (attribute.Name is not GenericNameSyntax)
                 {

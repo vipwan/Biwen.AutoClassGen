@@ -16,16 +16,10 @@ internal class SourceGenAnalyzer : DiagnosticAnalyzer
         Desc.InvalidDeclareNameError,
         Desc.SuggestDeclareNameWarning,
         Desc.SuggestAutoGen,
-        Desc.MutiMarkedAutoDtoError,
-        Desc.MarkedAbstractAutoDtoError,
         Desc.MarkedAutoDecorError,
     ];
 
     private const string AttributeValueMetadataName = "AutoGen";
-    /// <summary>
-    /// Dto特性名称,注意存在泛型的情况
-    /// </summary>
-    private const string AttributeValueMetadataNameDto = "AutoDto";
 
     /// <summary>
     /// AutoDecor,注意存在泛型的情况
@@ -163,26 +157,6 @@ internal class SourceGenAnalyzer : DiagnosticAnalyzer
                 {
                     foreach (var attr in declaration.AttributeLists.AsEnumerable())
                     {
-                        if (attr.Attributes.Where(x => x.Name.ToString().IndexOf(
-                            AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0).Count() > 1)
-                        {
-                            var location = attr.GetLocation();
-                            // issue error
-                            ctx.ReportDiagnostic(Diagnostic.Create(Desc.MutiMarkedAutoDtoError, location));
-                        }
-
-                        if (attr.Attributes.Where(x => x.Name.ToString().IndexOf(
-                            AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0).Any())
-                        {
-                            if (declaration.Modifiers.Any(x => x.ValueText == "abstract"))
-                            {
-                                var location = attr.Attributes.Where(
-                                    x => x.Name.ToString().IndexOf(AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0).First().GetLocation();
-                                // issue error
-                                ctx.ReportDiagnostic(Diagnostic.Create(Desc.MarkedAbstractAutoDtoError, location));
-                            }
-                        }
-
                         if (attr.Attributes.Where(x => x.Name.ToString().IndexOf(
                             AttributeValueMetadataNameDecor, StringComparison.Ordinal) == 0).Any())
                         {

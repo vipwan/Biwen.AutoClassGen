@@ -9,8 +9,6 @@ internal class DiagnosticDescriptors
     public const string GEN011 = "GEN011";
     public const string GEN021 = "GEN021";
     public const string GEN031 = "GEN031"; // 推荐生成
-    public const string GEN041 = "GEN041"; // 重复标注
-    public const string GEN042 = "GEN042"; // 不可用于abstract基类
     public const string GEN043 = "GEN043"; // 标记[AutoDecor]的类型,装饰器必须是它的实现类或者子类
 
     /// <summary>
@@ -57,33 +55,6 @@ internal class DiagnosticDescriptors
                                                                           DiagnosticSeverity.Info,
                                                                           helpLinkUri: Helplink,
                                                                           isEnabledByDefault: true);
-
-
-    /// <summary>
-    /// Dto特性重复标注
-    /// </summary>
-    public static readonly DiagnosticDescriptor MutiMarkedAutoDtoError = new(id: GEN041,
-                                                                          title: "重复标注[AutoDto]",
-                                                                          messageFormat: "重复标注了[AutoDto],请删除多余的标注",
-                                                                          category: typeof(SourceGenerator).Assembly.GetName().Name,
-                                                                          DiagnosticSeverity.Error,
-                                                                          helpLinkUri: Helplink,
-                                                                          isEnabledByDefault: true);
-
-
-    /// <summary>
-    /// Dto错误标注
-    /// </summary>
-    public static readonly DiagnosticDescriptor MarkedAbstractAutoDtoError = new(id: GEN042,
-                                                                          title: "不可在abstract类上标注[AutoDto]",
-                                                                          messageFormat: "不可在abstract类上标注[AutoDto]",
-                                                                          category: typeof(SourceGenerator).Assembly.GetName().Name,
-                                                                          DiagnosticSeverity.Error,
-                                                                          helpLinkUri: Helplink,
-                                                                          isEnabledByDefault: true);
-
-
-
 
     /// <summary>
     /// Decor错误标注

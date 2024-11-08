@@ -125,15 +125,6 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 continue;
             }
 
-            if (node.AttributeLists.AsEnumerable().Where(
-                x => x.Attributes[0].Name.ToString().IndexOf(AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0).Count() > 1)
-            {
-                var location = node.GetLocation();
-                // issue error
-                context.ReportDiagnostic(Diagnostic.Create(Desc.MutiMarkedAutoDtoError, location));
-                continue;
-            }
-
             var sb = new StringBuilder();
             sb.AppendLine();
             sb.AppendLine($"//generate {entityName}-{node.Identifier.ValueText}");
