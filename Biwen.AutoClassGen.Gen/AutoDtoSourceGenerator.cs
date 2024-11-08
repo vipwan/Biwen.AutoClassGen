@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-
+using System.Threading.Tasks.Sources;
 using Desc = Biwen.AutoClassGen.DiagnosticDescriptors;
 
 namespace Biwen.AutoClassGen;
@@ -81,8 +81,19 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
         envStringBuilder.AppendLine("using System.Threading.Tasks;");
         envStringBuilder.AppendLine("#pragma warning disable");
 
-        foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
+        foreach (var syntaxNode in nodes.AsEnumerable())
         {
+            //Cast<ClassDeclarationSyntax>()
+            //Cast<RecordDeclarationSyntax>()
+
+            if (syntaxNode is not TypeDeclarationSyntax node)
+            {
+                continue;
+            }
+
+            //如果是Record类
+            var isRecord = syntaxNode is RecordDeclarationSyntax;
+
             //如果不含partial关键字,则不生成
             if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
             {
@@ -135,7 +146,10 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             sb.AppendLine("$classes");
             sb.AppendLine("}");
             // sb.AppendLine("#pragma warning restore");
-            string classTemp = $"partial class $className  {{ $body }}";
+            string classTemp = $"partial $isRecord $className  {{ $body }}";
+
+            classTemp = classTemp.Replace("$isRecord", isRecord ? "record class" : "class");
+
 
             {
                 // 排除的属性
@@ -280,8 +294,19 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
         envStringBuilder.AppendLine("using System.Threading.Tasks;");
         envStringBuilder.AppendLine("#pragma warning disable");
 
-        foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
+        foreach (var nodeSyntax in nodes.AsEnumerable())
         {
+            //Cast<ClassDeclarationSyntax>()
+            //Cast<RecordDeclarationSyntax>()
+            if (nodeSyntax is not TypeDeclarationSyntax node)
+            {
+                continue;
+            }
+
+            //如果是Record类
+            var isRecord = nodeSyntax is RecordDeclarationSyntax;
+
+
             //如果不含partial关键字,则不生成
             if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
             {
@@ -327,7 +352,8 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             sb.AppendLine("$classes");
             sb.AppendLine("}");
             // sb.AppendLine("#pragma warning restore");
-            string classTemp = $"partial class $className  {{ $body }}";
+            string classTemp = $"partial $isRecord $className  {{ $body }}";
+            classTemp = classTemp.Replace("$isRecord", isRecord ? "record class" : "class");
 
             {
                 // 排除的属性

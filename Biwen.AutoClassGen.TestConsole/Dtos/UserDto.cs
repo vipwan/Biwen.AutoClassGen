@@ -36,6 +36,24 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
     }
 
 
+    [AutoDto(typeof(User), nameof(User.Email))]
+    public partial record class User4Dto
+    {
+        public string? Wooo { get; set; }
+    }
+
+    [AutoDto<User>(nameof(User.Id))]
+    public partial record class User5Dto(int Id)
+    {
+        /// <summary>
+        /// 如果存在主构造函数，必须有对应的参数,否则Mapper ToDto方法会报错
+        /// </summary>
+        public User5Dto() : this(1) { }
+
+        public string? Wooo { get; set; }
+    }
+
+
     [AutoDto<VenueImage>]
     public partial class VenueImageDto
     {
