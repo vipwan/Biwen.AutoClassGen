@@ -101,11 +101,11 @@ GenericAutoInjectAttributeName,
     /// </summary>
     /// <param name="compilation"></param>
     /// <param name="nodes"></param>
-    private static List<AutoInjectDefine> GetGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+    private static List<AutoInjectMetadata> GetGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
     {
         if (nodes.Length == 0) return [];
         // 注册的服务
-        List<AutoInjectDefine> autoInjects = [];
+        List<AutoInjectMetadata> autoInjects = [];
         List<string> namespaces = [];
 
         foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
@@ -170,7 +170,7 @@ GenericAutoInjectAttributeName,
                             }
                         }
 
-                        autoInjects.Add(new AutoInjectDefine(
+                        autoInjects.Add(new AutoInjectMetadata(
                             implTypeName,
                             baseTypeName,
                             lifeTime
@@ -203,11 +203,11 @@ GenericAutoInjectAttributeName,
     /// </summary>
     /// <param name="compilation"></param>
     /// <param name="nodes"></param>
-    private static List<AutoInjectDefine> GetAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+    private static List<AutoInjectMetadata> GetAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
     {
         if (nodes.Length == 0) return [];
         // 注册的服务
-        List<AutoInjectDefine> autoInjects = [];
+        List<AutoInjectMetadata> autoInjects = [];
         List<string> namespaces = [];
 
         foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
@@ -297,7 +297,7 @@ GenericAutoInjectAttributeName,
                             }
                         }
 
-                        autoInjects.Add(new AutoInjectDefine(
+                        autoInjects.Add(new AutoInjectMetadata(
                             implTypeName,
                             baseTypeName,
                             lifeTime));
@@ -327,11 +327,11 @@ GenericAutoInjectAttributeName,
 
 
     //获取keyed的Define
-    private static List<AutoInjectDefine> GetAnnotatedNodesInjectKeyed(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+    private static List<AutoInjectMetadata> GetAnnotatedNodesInjectKeyed(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
     {
         if (nodes.Length == 0) return [];
         // 注册的服务
-        List<AutoInjectDefine> autoInjects = [];
+        List<AutoInjectMetadata> autoInjects = [];
         List<string> namespaces = [];
 
         foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
@@ -420,7 +420,7 @@ GenericAutoInjectAttributeName,
                             }
                         }
 
-                        autoInjects.Add(new AutoInjectDefine(
+                        autoInjects.Add(new AutoInjectMetadata(
                             implTypeName,
                             baseTypeName,
                             lifeTime)
@@ -454,37 +454,37 @@ GenericAutoInjectAttributeName,
     //private static List<AutoInjectDefine> _injectDefines = [];
     //private static List<string> _namespaces = [];
 
-    private static void GenSource(SourceProductionContext context, IEnumerable<AutoInjectDefine> injectDefines, string? rootNamespace)
+    private static void GenSource(SourceProductionContext context, IEnumerable<AutoInjectMetadata> metas, string? rootNamespace)
     {
         //如果没有任何注入定义,则不生成代码
-        if (!injectDefines.Any()) return;
+        if (!metas.Any()) return;
 
         // 生成代码
         StringBuilder classes = new();
-        injectDefines.Distinct().ToList().ForEach(define =>
+        metas.Distinct().ToList().ForEach(meta =>
         {
             //NET8.0以上支持Keyed
-            if (define.Key != null)
+            if (meta.Key != null)
             {
-                if (define.ImplType != define.BaseType)
+                if (meta.ImplType != meta.BaseType)
                 {
-                    classes.AppendLine($@"services.{define.LifeTime}<{define.BaseType}, {define.ImplType}>(""{define.Key}"");");
+                    classes.AppendLine($@"services.{meta.LifeTime}<{meta.BaseType}, {meta.ImplType}>(""{meta.Key}"");");
                 }
                 else
                 {
-                    classes.AppendLine($@"services.{define.LifeTime}<{define.ImplType}>(""{define.Key}"");");
+                    classes.AppendLine($@"services.{meta.LifeTime}<{meta.ImplType}>(""{meta.Key}"");");
                 }
             }
             //非Keyed
             else
             {
-                if (define.ImplType != define.BaseType)
+                if (meta.ImplType != meta.BaseType)
                 {
-                    classes.AppendLine($@"services.{define.LifeTime}<{define.BaseType}, {define.ImplType}>();");
+                    classes.AppendLine($@"services.{meta.LifeTime}<{meta.BaseType}, {meta.ImplType}>();");
                 }
                 else
                 {
-                    classes.AppendLine($@"services.{define.LifeTime}<{define.ImplType}>();");
+                    classes.AppendLine($@"services.{meta.LifeTime}<{meta.ImplType}>();");
                 }
             }
         });
@@ -505,7 +505,7 @@ GenericAutoInjectAttributeName,
 
     }
 
-    private record AutoInjectDefine(string ImplType, string BaseType, string LifeTime)
+    private record AutoInjectMetadata(string ImplType, string BaseType, string LifeTime)
     {
         /// <summary>
         /// 针对NET8.0以上的Keyed Service,默认为NULL
