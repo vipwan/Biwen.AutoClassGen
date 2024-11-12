@@ -5,6 +5,7 @@
 // Test Console App UserDto.cs 
 // 2024-09-26 16:17:44  Biwen.AutoClassGen.TestConsole 万雅虎
 
+using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 
 namespace Biwen.AutoClassGen.TestConsole.Dtos
@@ -70,20 +71,15 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
 
 namespace Biwen.AutoClassGen.TestConsole.Entitys
 {
+
     public static partial class UserToUserDtoExtentions
     {
-        ///// <summary>
-        ///// mapper to UserDto
-        ///// </summary>
-        ///// <returns></returns>
-        //public static UserDto MapperToDto(this User model)
-        //{
-        //    return new UserDto()
-        //    {
-        //        FirstName = model.FirstName,
-        //        LastName = model.LastName,
-        //        Age = model.Age,
-        //    };
-        //}
+        static partial void MapperToPartial(User from, UserDto to)
+        {
+            to.FirstName = "重写了FirstName";
+        }
+
     }
+
+
 }

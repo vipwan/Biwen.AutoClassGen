@@ -106,6 +106,9 @@ var user2Dto = user.MapperToUser2Dto();
 var user3Dto = user.MapperToUser3Dto();
 
 
+var user2 = user3Dto.MapperToUser();
+
+
 var venue = new Venue
 {
     Address = "No1 street",
@@ -123,8 +126,10 @@ Console.WriteLine($"I`m {nameof(userDto)} {userDto.FirstName} {userDto.LastName}
 Console.WriteLine($"I`m {nameof(user2Dto)} {user2Dto.FirstName} {user2Dto.LastName} I`m {user2Dto.Age} years old");
 Console.WriteLine($"I`m {nameof(user3Dto)} {user3Dto.FirstName} {user3Dto.LastName} I`m {user3Dto.Age} years old");
 
+Console.WriteLine($"I`m {nameof(user)}2 {user2.FirstName} {user2.LastName} I`m {user2.Age} years old");
 
 Console.WriteLine($"I`m {nameof(venuesDto)} {venuesDto.Name} {venuesDto.Address} I have {venuesDto.Images?.Count} images");
+
 
 
 

@@ -273,6 +273,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 List<string> namespaces = [];
                 StringBuilder bodyInnerBuilder = new();
                 StringBuilder mapperBodyBuilder = new();
+                StringBuilder mapperBodyBuilder2 = new();
 
                 bodyInnerBuilder.AppendLine();
 
@@ -318,10 +319,16 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                 bodyInnerBuilder.AppendLine($"{raw}");
 
                                 // mapper:
-                                // 只有public的属性才能赋值
+                                // 只有public的属性才能赋值.且可写
                                 if (prop.GetMethod?.DeclaredAccessibility == Accessibility.Public)
                                 {
                                     mapperBodyBuilder.AppendLine($"{prop.Name} = model.{prop.Name},");
+                                }
+                                // mapper2:
+                                if (prop.GetMethod?.DeclaredAccessibility == Accessibility.Public &&
+                                    prop.SetMethod?.DeclaredAccessibility == Accessibility.Public)
+                                {
+                                    mapperBodyBuilder2.AppendLine($"{prop.Name} = model.{prop.Name},");
                                 }
                             }
                         });
@@ -365,6 +372,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 mapperSource = mapperSource.Replace("$baseclass", metadata.FromClass);
                 mapperSource = mapperSource.Replace("$dtoclass", className);
                 mapperSource = mapperSource.Replace("$body", mapperBodyBuilder.ToString());
+                mapperSource = mapperSource.Replace("$2body", mapperBodyBuilder2.ToString());
 
                 // 合并
                 source = $"{source}\r\n{mapperSource}";
@@ -399,15 +407,42 @@ namespace $namespace
     public static partial class $baseclassTo$dtoclassExtentions
     {{
         /// <summary>
+        /// custom mapper
+        /// </summary>
+        static partial void MapperToPartial($baseclass from, $dtoclass to);
+        /// <summary>
         /// mapper to $dtoclass
         /// </summary>
         /// <returns></returns>
         public static $dtoclass MapperTo$dtoclass(this $baseclass model)
         {{
-            return new $dtoclass()
+            var retn = new $dtoclass()
             {{
                 $body
             }};
+            MapperToPartial(model, retn);
+            return retn;
+        }}
+    }}
+
+    public static partial class $dtoclassTo$baseclassExtentions
+    {{
+        /// <summary>
+        /// custom mapper
+        /// </summary>
+        static partial void MapperToPartial($dtoclass from, $baseclass to);
+        /// <summary>
+        /// mapper to $baseclass
+        /// </summary>
+        /// <returns></returns>
+        public static $baseclass MapperTo$baseclass(this $dtoclass model)
+        {{
+            var retn = new $baseclass()
+            {{
+                $2body
+            }};
+            MapperToPartial(model, retn);
+            return retn;
         }}
     }}
 }}
