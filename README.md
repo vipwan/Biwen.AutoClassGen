@@ -1,5 +1,10 @@
 ﻿# Biwen.AutoClassGen
 
+![Nuget](https://img.shields.io/nuget/v/Biwen.AutoClassGen)
+![Nuget](https://img.shields.io/nuget/dt/Biwen.AutoClassGen)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/LICENSE.txt) 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/vipwan/Biwen.AutoClassGen/pulls) 
+
 #### Usage scenario
 
 - In many cases, we will have a lot of request objects,
