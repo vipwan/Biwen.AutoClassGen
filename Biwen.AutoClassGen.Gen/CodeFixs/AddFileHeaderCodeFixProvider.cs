@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using System.Collections.Immutable;
 using System.Composition;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -200,7 +201,14 @@ internal class AddFileHeaderCodeFixProvider : CodeFixProvider
             };
         }, RegexOptions.Singleline);
 
-        var newRoot = root.WithLeadingTrivia(SyntaxFactory.Comment(comment + Environment.NewLine));
+        var oldLeadingTrivias = root.GetLeadingTrivia().ToList();
+        var commentTrivia = SyntaxFactory.Comment(comment + Environment.NewLine);
+
+        //存在指令的情况IsDirective:
+        oldLeadingTrivias.Insert(0, commentTrivia);
+
+        var newRoot = root.WithLeadingTrivia(oldLeadingTrivias);
+
         return document.WithSyntaxRoot(newRoot);
     }
 }

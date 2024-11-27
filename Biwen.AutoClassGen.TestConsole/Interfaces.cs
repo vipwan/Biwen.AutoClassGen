@@ -1,6 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+#if NET8_0_OR_GREATER
+
+#endif
+
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+
+
+
 
 namespace Biwen.AutoClassGen.TestConsole.Interfaces
 {
