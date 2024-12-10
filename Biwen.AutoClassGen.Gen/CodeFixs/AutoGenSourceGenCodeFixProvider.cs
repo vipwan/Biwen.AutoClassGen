@@ -17,9 +17,9 @@ using Desc = DiagnosticDescriptors;
 /// <summary>
 /// 代码修补提供者.
 /// </summary>
-[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SourceGenCodeFixProvider))]
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AutoGenSourceGenCodeFixProvider))]
 [Shared]
-internal sealed class SourceGenCodeFixProvider : CodeFixProvider
+internal sealed class AutoGenSourceGenCodeFixProvider : CodeFixProvider
 {
     /// <summary>
     /// GetFixAllProvider.
@@ -74,7 +74,7 @@ internal sealed class SourceGenCodeFixProvider : CodeFixProvider
                     CodeAction action = CodeAction.Create(
                         "GEN:使用推荐的命名空间",
                         c => ReplaceWithNameOfAsync(context.Document, nodeToReplace, @namespace!, c),
-                        equivalenceKey: nameof(SourceGenCodeFixProvider));
+                        equivalenceKey: nameof(AutoGenSourceGenCodeFixProvider));
                     context.RegisterCodeFix(action, diagnostic);
                 }
             }
@@ -94,7 +94,7 @@ internal sealed class SourceGenCodeFixProvider : CodeFixProvider
                 CodeAction action = CodeAction.Create(
                     "GEN:使用推荐的类名称",
                     c => ReplaceWithNameOfAsync(context.Document, nodeToReplace, raw, c),
-                    equivalenceKey: nameof(SourceGenCodeFixProvider));
+                    equivalenceKey: nameof(AutoGenSourceGenCodeFixProvider));
                 context.RegisterCodeFix(action, diagnostic);
             }
             else if (diagnostic.Id == Desc.GEN001)
@@ -112,7 +112,7 @@ internal sealed class SourceGenCodeFixProvider : CodeFixProvider
 
                         return context.Document.WithSyntaxRoot(nowRoot);
                     },
-                    equivalenceKey: nameof(SourceGenCodeFixProvider));
+                    equivalenceKey: nameof(AutoGenSourceGenCodeFixProvider));
                 context.RegisterCodeFix(action, diagnostic);
             }
             else if (diagnostic.Id == Desc.GEN031)
@@ -120,7 +120,7 @@ internal sealed class SourceGenCodeFixProvider : CodeFixProvider
                 CodeAction action = CodeAction.Create(
                     "GEN:添加自动生成特性[AutoGen]",
                     c => AddAttributeAsync(context.Document, root?.FindNode(context.Span)!, "AutoGen", c),
-                    equivalenceKey: nameof(SourceGenCodeFixProvider));
+                    equivalenceKey: nameof(AutoGenSourceGenCodeFixProvider));
                 context.RegisterCodeFix(action, diagnostic);
             }
         }
@@ -184,13 +184,12 @@ internal sealed class SourceGenCodeFixProvider : CodeFixProvider
 
         var argumentLis = SyntaxFactory.AttributeArgumentList(
              SyntaxFactory.SeparatedList(
-                 new AttributeArgumentSyntax[]
-                 {
+                 [
                      SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(
                         SyntaxKind.StringLiteralExpression,SyntaxFactory.Literal(@class))),
                      SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(
                         SyntaxKind.StringLiteralExpression,SyntaxFactory.Literal(@namespace!))),
-                 }));
+                 ]));
 
         var attributes = (nodeToAddAttribute as InterfaceDeclarationSyntax)!.AttributeLists.Add(
             SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName(attributeName))
