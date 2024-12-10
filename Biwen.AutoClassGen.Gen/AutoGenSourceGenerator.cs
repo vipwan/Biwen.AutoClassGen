@@ -9,7 +9,7 @@ using System.Text;
 namespace Biwen.AutoClassGen;
 
 [Generator]
-public class SourceGenerator : IIncrementalGenerator
+public class AutoGenSourceGenerator : IIncrementalGenerator
 {
 
     private const string AttributeMetadataName = "Biwen.AutoClassGen.Attributes.AutoGenAttribute";
@@ -58,7 +58,8 @@ public class SourceGenerator : IIncrementalGenerator
         envStringBuilder.AppendLine("#pragma warning disable");
         envStringBuilder.AppendLine();
 
-        string classTemp = $"public partial class $className : $interfaceName {{ $body }}";
+        string classTemp = $"[global::System.CodeDom.Compiler.GeneratedCode(\"{ThisAssembly.Product}\", \"{ThisAssembly.FileVersion}\")]" +
+            $"public partial class $className : $interfaceName {{ $body }}";
 
         foreach (InterfaceDeclarationSyntax node in nodes.AsEnumerable().Cast<InterfaceDeclarationSyntax>())
         {
