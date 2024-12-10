@@ -57,16 +57,14 @@ internal class AddFileHeaderCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: Title,
-                createChangedDocument: c => FixDocumentAsync(context.Document, diagnosticSpan, c),
+                createChangedDocument: c => FixDocumentAsync(context.Document, c),
                 equivalenceKey: Title),
             diagnostic);
 
         return Task.CompletedTask;
     }
 
-#pragma warning disable IDE0060 // 删除未使用的参数
-    private static async Task<Document> FixDocumentAsync(Document document, TextSpan span, CancellationToken ct)
-#pragma warning restore IDE0060 // 删除未使用的参数
+    private static async Task<Document> FixDocumentAsync(Document document, CancellationToken ct)
     {
         var root = await document.GetSyntaxRootAsync(ct).ConfigureAwait(false);
 
