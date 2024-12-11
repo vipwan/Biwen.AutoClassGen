@@ -9,6 +9,7 @@
 		<Copyright>MIT</Copyright>
 		<Company>Inc</Company>
 		<Authors>万雅虎</Authors>
+		<Biwen-AutoClassGen>gv=true;ga=true;</Biwen-AutoClassGen>
 	</PropertyGroup>
 
 	<Import Project="../Version.props" />

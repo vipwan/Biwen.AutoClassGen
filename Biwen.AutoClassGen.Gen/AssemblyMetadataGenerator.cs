@@ -4,6 +4,9 @@ using System.Reflection;
 using System.Resources;
 using System.Runtime.Versioning;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Biwen.AutoClassGen;
 
@@ -36,11 +39,30 @@ public class AssemblyMetadataGenerator : IIncrementalGenerator
 
     private const string AssemblyVersionAttributeMetadataName = "System.Reflection.AssemblyVersionAttribute";
     private const string ONamespace = "build_property.rootnamespace";//命名空间
+    private const string ODir = "build_property.projectdir";//项目目录
+    private const string ProjExt = ".csproj";//项目文件扩展名
 
     private readonly record struct AssemblyConstant(string Name, string Value);
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        //proj file
+        var projInc = context.AnalyzerConfigOptionsProvider.Select((pvd, _) =>
+        {
+            //取得项目目录
+            var flag = pvd.GlobalOptions.TryGetValue(ODir, out var root);
+            if (!flag)
+                return null;
+
+            //取得命名空间
+            pvd.GlobalOptions.TryGetValue(ONamespace, out var @namespace);
+
+            //查找csproj文件
+            var files = Directory.GetFiles(root, $"*{ProjExt}", SearchOption.TopDirectoryOnly);
+
+            return files.Any() ? files[0] : null;
+        });
+
         //获取根命名空间
         var rootNamespace = context.AnalyzerConfigOptionsProvider.Select((pvd, _) =>
         {
@@ -105,13 +127,30 @@ public class AssemblyMetadataGenerator : IIncrementalGenerator
             }).Where(c => c?.Count > 0);
 
         //合并数据
-        var inc = attrs.Combine(rootNamespace);
+        var inc = attrs.Combine(rootNamespace).Combine(projInc);
 
         //生成源代码
         context.RegisterSourceOutput(inc, (ctx, info) =>
         {
-            var constants = info.Left;
-            var rootNamespace = info.Right;
+            if (info.Right is not null)
+            {
+                // 读取文件
+                var text = File.ReadAllText(info.Right);
+
+                //<Biwen-AutoClassGen>gv=false;ga=false;</Biwen-AutoClassGen>
+                //读取配置获取:Biwen-AutoClassGen.ga 如果等于false那么不生成:
+                var flagMatch = new Regex(@"<Biwen-AutoClassGen>(.*?)</Biwen-AutoClassGen>", RegexOptions.Singleline).Match(text);
+
+                if (flagMatch.Success)
+                {
+                    var flag = flagMatch.Groups[1].Value;
+                    if (flag?.ToLower(System.Globalization.CultureInfo.CurrentCulture).Contains("ga=false") is true)
+                        return;
+                }
+            }
+
+            var constants = info.Left.Left;
+            var rootNamespace = info.Left.Right;
 
             if (string.IsNullOrEmpty(rootNamespace))
                 return;

@@ -72,6 +72,17 @@ public class VersionSourceGenerator : IIncrementalGenerator
             // 读取文件
             var text = File.ReadAllText(info.File);
 
+            //<Biwen-AutoClassGen>gv=false;ga=false;</Biwen-AutoClassGen>
+            //读取配置获取:Biwen-AutoClassGen.gv 如果等于false那么不生成:
+            var flagMatch = new Regex(@"<Biwen-AutoClassGen>(.*?)</Biwen-AutoClassGen>", RegexOptions.Singleline).Match(text);
+
+            if (flagMatch.Success)
+            {
+                var flag = flagMatch.Groups[1].Value;
+                if (flag?.ToLower(System.Globalization.CultureInfo.CurrentCulture).Contains("gv=false") is true)
+                    return;
+            }
+
             // 载入Import的文件,例如 : <Import Project="..\Version.props" />
             // 使用正则表达式匹配Project:
             var importMatchs = ImportRegex.Matches(text);
