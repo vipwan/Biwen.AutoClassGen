@@ -403,6 +403,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
     private const string MapperTemplate = $@"
 namespace $namespace
 {{
+    using System.Linq;
     using $ns ;
     public static partial class $baseclassTo$dtoclassExtentions
     {{
@@ -423,6 +424,15 @@ namespace $namespace
             MapperToPartial(model, retn);
             return retn;
         }}
+
+        /// <summary>
+        /// ProjectTo $dtoclass
+        /// </summary>
+        public static IQueryable<$dtoclass> ProjectTo$dtoclass(this IQueryable<$baseclass> query)
+        {{
+            return query.Select(model => model.MapperTo$dtoclass());
+        }}
+        
     }}
 
     public static partial class $dtoclassTo$baseclassExtentions

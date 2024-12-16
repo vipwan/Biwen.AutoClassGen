@@ -18,6 +18,8 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
     {
     }
 
+
+
     /// <summary>
     /// to be generated more than one
     /// </summary>

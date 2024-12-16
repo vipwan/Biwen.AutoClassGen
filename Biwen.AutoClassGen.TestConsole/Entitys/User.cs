@@ -1,4 +1,6 @@
-﻿namespace Biwen.AutoClassGen.TestConsole.Entitys
+﻿using Biwen.AutoClassGen.TestConsole.Dtos;
+
+namespace Biwen.AutoClassGen.TestConsole.Entitys
 {
     public class User : Info
     {
@@ -44,4 +46,20 @@
         public string? Remark { get; set; }
     }
 
+
+
+    public static class UserExtensions
+    {
+        public static IQueryable<UserDto> ProjectToDto(this IQueryable<User> q)
+        {
+            return q.Select(x => new UserDto
+            {
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                Age = x.Age,
+                Email = x.Email,
+                Remark = x.Remark
+            });
+        }
+    }
 }

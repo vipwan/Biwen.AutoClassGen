@@ -131,7 +131,26 @@ Console.WriteLine($"I`m {nameof(user)}2 {user2.FirstName} {user2.LastName} I`m {
 Console.WriteLine($"I`m {nameof(venuesDto)} {venuesDto.Name} {venuesDto.Address} I have {venuesDto.Images?.Count} images");
 
 
+// project to dto
 
+var user3 = new User
+{
+    Age = 20,
+    Email = "vipwan2@ms.co.ltd",
+    FirstName = "biwen2",
+    LastName = "wan2",
+    Id = "001",
+    Remark = "this is a test",
+};
+
+var users = new List<User> { user, user3 };
+var list = users.AsQueryable().ProjectToUserDto().ToList();
+
+Console.WriteLine("project to dto:");
+foreach (var item in list)
+{
+    Console.WriteLine($"I`m {nameof(UserDto)} {item.FirstName} {item.LastName} I`m {item.Age} years old");
+}
 
 
 Console.ReadLine();
