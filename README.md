@@ -23,7 +23,7 @@ If all this code needs to be written, it will add a lot of work, so Biwen.AutoCl
 ```xml
 <ItemGroup>
 	<PackageReference Include="Biwen.AutoClassGen.Attributes" Version="x.x.x" />
-	<PackageReference Include="Biwen.AutoClassGen" Version="x.x.x" PrivateAssets="All" />
+	<PackageReference Include="Biwen.AutoClassGen" Version="x.x.x" PrivateAssets="all" />
 </ItemGroup>
 ```
 
