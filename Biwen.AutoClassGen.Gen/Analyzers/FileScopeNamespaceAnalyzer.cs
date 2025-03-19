@@ -78,6 +78,14 @@ internal class FileScopeNamespaceAnalyzer : DiagnosticAnalyzer
         if (namespaces.Count() != 1)
             return;
 
+        // 检查命名空间下的顶级类型数量
+        var namespaceMembers = namespaceDeclaration.Members;
+        var topLevelTypes = namespaceMembers.Count;
+        
+        // 如果顶级类型数量大于1，则不提示
+        if (topLevelTypes > 1)
+            return;
+
         // 仅在命名空间上方提醒
         var location = namespaceDeclaration.SyntaxTree.GetLocation(
             TextSpan.FromBounds(namespaceDeclaration.SpanStart, namespaceDeclaration.Name.Span.End));
