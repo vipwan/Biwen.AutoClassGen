@@ -28,13 +28,16 @@ internal class EncodingUTF8Analyzer : DiagnosticAnalyzer
     private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
     {
         var encoding = context.Tree.Encoding;
-        var notUtf8 = encoding != null && encoding != Encoding.UTF8;
 
-        if (notUtf8)
+        // 检查是否为 UTF-8 编码（包括带 BOM 和不带 BOM 的情况）
+        var isUtf8 = encoding != null &&
+            (encoding == Encoding.UTF8 ||
+             encoding == new UTF8Encoding(true) ||
+             encoding == new UTF8Encoding(false));
+
+        if (!isUtf8)
         {
             var root = context.Tree.GetRoot(context.CancellationToken);
-
-            //location 为文本的第一个字符,到最后一个字符
             var location = Location.Create(context.Tree, TextSpan.FromBounds(0, root.FullSpan.End));
 
             var diagnostic = Diagnostic.Create(Rule, location);
