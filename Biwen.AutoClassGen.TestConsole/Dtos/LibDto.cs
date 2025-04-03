@@ -8,6 +8,8 @@
 namespace Biwen.AutoClassGen.TestConsole.Dtos;
 
 using Biwen.AutoClassGen.TestLib;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 //非同一代码库下,不会生成
 [AutoDto<TestClass1>] //warning
@@ -30,10 +32,13 @@ public class TClass<T>
 {
     public T? Id { get; set; }
 
+    [StringLength(100,MinimumLength = 5)]
     public string? Hello { get; set; }
 }
 
 public class TImplClass : TClass<string>
 {
+    [Required]
+    [Description("hello world")]
     public string? World { get; set; }
 }

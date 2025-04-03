@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// <copyright file="SourceGenCodeFixProvider.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -41,29 +44,33 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             (ctx, nodes) =>
             {
                 var meta1 = GetMeta(nodes.Right.Left);
-                var meta2 = GetMetaFromGeneric(nodes.Right.Right);
+                var meta2 = GetMeta(nodes.Right.Right, true);
                 GenSource(nodes.Left, ctx, [.. meta1, .. meta2]);
             });
     }
 
-    private static List<AutoDtoMetadata> GetMeta(ImmutableArray<SyntaxNode> nodes)
+    /// <summary>
+    /// 从普通AutoDto或泛型AutoDto属性中提取元数据
+    /// </summary>
+    /// <param name="nodes">语法节点集合</param>
+    /// <param name="isGeneric">是否为泛型属性</param>
+    /// <returns>AutoDto元数据列表</returns>
+    private static List<AutoDtoMetadata> GetMeta(ImmutableArray<SyntaxNode> nodes, bool isGeneric = false)
     {
         List<AutoDtoMetadata> retn = [];
         if (nodes.Length == 0) return retn;
+
         foreach (var syntaxNode in nodes.AsEnumerable())
         {
-            //Cast<ClassDeclarationSyntax>()
-            //Cast<RecordDeclarationSyntax>()
-
             if (syntaxNode is not TypeDeclarationSyntax node)
             {
                 continue;
             }
 
-            //如果是Record类
+            // 如果是Record类
             var isRecord = syntaxNode is RecordDeclarationSyntax;
 
-            //如果不含partial关键字,则不生成
+            // 如果不含partial关键字,则不生成
             if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
             {
                 continue;
@@ -73,67 +80,34 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             foreach (var attr in node.AttributeLists.AsEnumerable())
             {
                 var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                if (attrName == AttributeValueMetadataNameDto)
+                if (isGeneric
+                    ? attrName?.IndexOf(AttributeValueMetadataNameDto, System.StringComparison.Ordinal) == 0
+                    : attrName == AttributeValueMetadataNameDto)
                 {
-                    attributeSyntax = attr.Attributes.First(x => x.Name.ToString() == AttributeValueMetadataNameDto);
+                    attributeSyntax = attr.Attributes.First(x => isGeneric
+                        ? x.Name.ToString().IndexOf(AttributeValueMetadataNameDto, System.StringComparison.Ordinal) == 0
+                        : x.Name.ToString() == AttributeValueMetadataNameDto);
                     break;
                 }
             }
+
             if (attributeSyntax == null)
             {
                 continue;
             }
 
-            //转译的Entity类名
-            var entityName = string.Empty;
-            var eType = (attributeSyntax.ArgumentList!.Arguments[0].Expression as TypeOfExpressionSyntax)!.Type;
-            if (eType.IsKind(SyntaxKind.IdentifierName))
-            {
-                entityName = (eType as IdentifierNameSyntax)!.Identifier.ValueText;
-            }
-            else if (eType.IsKind(SyntaxKind.QualifiedName))
-            {
-                entityName = (eType as QualifiedNameSyntax)!.ToString().Split(['.']).Last();
-            }
-            else if (eType.IsKind(SyntaxKind.AliasQualifiedName))
-            {
-                entityName = (eType as AliasQualifiedNameSyntax)!.ToString().Split(['.']).Last();
-            }
+            // 提取实体名称（这是两个方法的主要区别）
+            string entityName = ExtractEntityName(attributeSyntax, isGeneric);
             if (string.IsNullOrEmpty(entityName))
             {
                 continue;
             }
 
-            var rootNamespace = string.Empty;
+            // 获取命名空间
+            var rootNamespace = GetRootNamespace(node);
 
-            //获取文件范围的命名空间
-            var filescopeNamespace = node.AncestorsAndSelf().OfType<FileScopedNamespaceDeclarationSyntax>().FirstOrDefault();
-
-            if (filescopeNamespace != null)
-            {
-                rootNamespace = filescopeNamespace.Name.ToString();
-            }
-            else
-            {
-                rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
-            }
-
-            // 排除的属性
-            HashSet<string> escapes = [];
-            for (var i = 1; i < attributeSyntax.ArgumentList.Arguments.Count; i++)
-            {
-                var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
-                if (expressionSyntax.IsKind(SyntaxKind.InvocationExpression))
-                {
-                    var name = (expressionSyntax as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
-                    escapes.Add(name.Split(['.']).Last());
-                }
-                else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
-                {
-                    var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
-                    escapes.Add(name);
-                }
-            }
+            // 提取需排除的属性
+            HashSet<string> escapes = GetEscapeProperties(attributeSyntax, isGeneric);
 
             retn.Add(new AutoDtoMetadata(entityName, node.Identifier.ValueText, escapes)
             {
@@ -141,99 +115,98 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 RootNamespace = rootNamespace,
             });
         }
+
         return retn;
     }
 
-    private static List<AutoDtoMetadata> GetMetaFromGeneric(ImmutableArray<SyntaxNode> nodes)
+    /// <summary>
+    /// 从属性中提取实体名称
+    /// </summary>
+    private static string ExtractEntityName(AttributeSyntax attributeSyntax, bool isGeneric)
     {
-        List<AutoDtoMetadata> retn = [];
-        if (nodes.Length == 0) return retn;
-        foreach (var syntaxNode in nodes.AsEnumerable())
+        if (isGeneric)
         {
-            //Cast<ClassDeclarationSyntax>()
-            //Cast<RecordDeclarationSyntax>()
-            if (syntaxNode is not TypeDeclarationSyntax node)
-            {
-                continue;
-            }
-            //如果是Record类
-            var isRecord = syntaxNode is RecordDeclarationSyntax;
-            //如果不含partial关键字,则不生成
-            if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
-            {
-                continue;
-            }
-            AttributeSyntax? attributeSyntax = null;
-            foreach (var attr in node.AttributeLists.AsEnumerable())
-            {
-                var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                if (attrName?.IndexOf(AttributeValueMetadataNameDto, System.StringComparison.Ordinal) == 0)
-                {
-                    attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameDto, System.StringComparison.Ordinal) == 0);
-                    break;
-                }
-            }
-            if (attributeSyntax == null)
-            {
-                continue;
-            }
-            //转译的Entity类名
-            var entityName = string.Empty;
             string pattern = @"(?<=<)(?<type>\w+)(?=>)";
             var match = Regex.Match(attributeSyntax.ToString(), pattern);
             if (match.Success)
             {
-                entityName = match.Groups["type"].Value.Split(['.']).Last();
+                return match.Groups["type"].Value.Split(['.']).Last();
             }
-            else
-            {
-                continue;
-            }
-
-            var rootNamespace = string.Empty;
-
-            //获取文件范围的命名空间
-            var filescopeNamespace = node.AncestorsAndSelf().OfType<FileScopedNamespaceDeclarationSyntax>().FirstOrDefault();
-
-            if (filescopeNamespace != null)
-            {
-                rootNamespace = filescopeNamespace.Name.ToString();
-            }
-            else
-            {
-                rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
-            }
-
-            // 排除的属性
-            HashSet<string> escapes = [];
-
-            if (attributeSyntax.ArgumentList?.Arguments.Count > 0)
-            {
-                for (var i = 0; i < attributeSyntax.ArgumentList?.Arguments.Count; i++)
-                {
-                    var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
-                    if (expressionSyntax.IsKind(SyntaxKind.InvocationExpression))
-                    {
-                        var name = (expressionSyntax as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
-                        escapes.Add(name.Split(['.']).Last());
-                    }
-                    else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
-                    {
-                        var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
-                        escapes.Add(name);
-                    }
-                }
-            }
-
-            retn.Add(new AutoDtoMetadata(entityName, node.Identifier.ValueText, escapes)
-            {
-                IsRecord = isRecord,
-                RootNamespace = rootNamespace,
-            });
+            return string.Empty;
         }
-        return retn;
+        else
+        {
+            var eType = (attributeSyntax.ArgumentList!.Arguments[0].Expression as TypeOfExpressionSyntax)!.Type;
+            if (eType.IsKind(SyntaxKind.IdentifierName))
+            {
+                return (eType as IdentifierNameSyntax)!.Identifier.ValueText;
+            }
+            else if (eType.IsKind(SyntaxKind.QualifiedName))
+            {
+                return (eType as QualifiedNameSyntax)!.ToString().Split(['.']).Last();
+            }
+            else if (eType.IsKind(SyntaxKind.AliasQualifiedName))
+            {
+                return (eType as AliasQualifiedNameSyntax)!.ToString().Split(['.']).Last();
+            }
+            return string.Empty;
+        }
     }
 
+    /// <summary>
+    /// 获取根命名空间
+    /// </summary>
+    private static string GetRootNamespace(TypeDeclarationSyntax node)
+    {
+        // 获取文件范围的命名空间
+        var filescopeNamespace = node.AncestorsAndSelf().OfType<FileScopedNamespaceDeclarationSyntax>().FirstOrDefault();
+
+        if (filescopeNamespace != null)
+        {
+            return filescopeNamespace.Name.ToString();
+        }
+        else
+        {
+            return node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
+        }
+    }
+
+    /// <summary>
+    /// 获取需排除的属性
+    /// </summary>
+    private static HashSet<string> GetEscapeProperties(AttributeSyntax attributeSyntax, bool isGeneric)
+    {
+        HashSet<string> escapes = [];
+
+        if (attributeSyntax.ArgumentList == null)
+        {
+            return escapes;
+        }
+
+        int startIndex = isGeneric ? 0 : 1;
+        int count = attributeSyntax.ArgumentList.Arguments.Count;
+
+        for (var i = startIndex; i < count; i++)
+        {
+            var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
+            if (expressionSyntax.IsKind(SyntaxKind.InvocationExpression))
+            {
+                var name = (expressionSyntax as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
+                escapes.Add(name.Split(['.']).Last());
+            }
+            else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
+            {
+                var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
+                escapes.Add(name);
+            }
+        }
+
+        return escapes;
+    }
+
+    /// <summary>
+    /// 生成源代码
+    /// </summary>
     private static void GenSource(Compilation compilation, SourceProductionContext context, IEnumerable<AutoDtoMetadata> metadatas)
     {
         if (!metadatas.Any()) return;
@@ -250,6 +223,8 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
         envStringBuilder.AppendLine("using System.Collections.Generic;");
         envStringBuilder.AppendLine("using System.Text;");
         envStringBuilder.AppendLine("using System.Threading.Tasks;");
+        envStringBuilder.AppendLine("using System.ComponentModel;"); // 添加 Description 特性所需命名空间
+        envStringBuilder.AppendLine("using System.ComponentModel.DataAnnotations;"); // 添加 Required 和 StringLength 特性所需命名空间
         envStringBuilder.AppendLine("#pragma warning disable");
 
         foreach (var metadata in metadatas)
@@ -282,8 +257,8 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 // 生成属性
                 void GenProperty(TypeSyntax @type)
                 {
-                    //无法将类型为“Microsoft.CodeAnalysis.CSharp.Symbols.PublicModel.PropertySymbol”
-                    //的对象强制转换为类型“Microsoft.CodeAnalysis.ITypeSymbol
+                    //无法将类型为"Microsoft.CodeAnalysis.CSharp.Symbols.PublicModel.PropertySymbol"
+                    //的对象强制转换为类型"Microsoft.CodeAnalysis.ITypeSymbol
                     var symbols = compilation.GetSymbolsWithName(@type.ToString(), SymbolFilter.Type);
 
                     foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
@@ -294,6 +269,19 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                         {
                             namespaces.Add(fullNameSpace);
                         }
+
+                        // 确保添加System.ComponentModel命名空间
+                        if (!namespaces.Contains("System.ComponentModel"))
+                        {
+                            namespaces.Add("System.ComponentModel");
+                        }
+                        
+                        // 确保添加System.ComponentModel.DataAnnotations命名空间
+                        if (!namespaces.Contains("System.ComponentModel.DataAnnotations"))
+                        {
+                            namespaces.Add("System.ComponentModel.DataAnnotations");
+                        }
+
                         symbol.GetMembers().OfType<IPropertySymbol>().ToList().ForEach(prop =>
                         {
                             if (!metadata.Escapes.Contains(prop.Name))
@@ -312,10 +300,56 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                     return;
                                 }
 
+                                // 处理属性特性
+                                var attributesBuilder = new StringBuilder();
+                                foreach (var attribute in prop.GetAttributes())
+                                {
+                                    // 查找Description特性
+                                    if (attribute.AttributeClass?.Name == "DescriptionAttribute")
+                                    {
+                                        var description = attribute.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                                        if (!string.IsNullOrEmpty(description))
+                                        {
+                                            attributesBuilder.AppendLine($"[Description(\"{description}\")]");
+                                        }
+                                    }
+                                    // 查找Required特性
+                                    else if (attribute.AttributeClass?.Name == "RequiredAttribute")
+                                    {
+                                        attributesBuilder.AppendLine("[Required]");
+                                    }
+                                    // 查找StringLength特性
+                                    else if (attribute.AttributeClass?.Name == "StringLengthAttribute")
+                                    {
+                                        var maxLength = attribute.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                                        if (!string.IsNullOrEmpty(maxLength))
+                                        {
+                                            // 检查是否有MinimumLength参数
+                                            var minLength = attribute.NamedArguments
+                                                .FirstOrDefault(na => na.Key == "MinimumLength")
+                                                .Value.Value?.ToString();
+                                            
+                                            if (!string.IsNullOrEmpty(minLength))
+                                            {
+                                                attributesBuilder.AppendLine($"[StringLength({maxLength}, MinimumLength = {minLength})]");
+                                            }
+                                            else
+                                            {
+                                                attributesBuilder.AppendLine($"[StringLength({maxLength})]");
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // prop:
                                 var raw = $"public {prop.Type.ToDisplayString()} {prop.Name} {{get;set;}}";
                                 // body:
                                 bodyInnerBuilder.AppendLine($"/// <inheritdoc cref=\"{@type}.{prop.Name}\" />");
+                                // 添加特性
+                                if (attributesBuilder.Length > 0)
+                                {
+                                    bodyInnerBuilder.Append(attributesBuilder.ToString());
+                                }
                                 bodyInnerBuilder.AppendLine($"{raw}");
 
                                 // mapper:
@@ -459,5 +493,4 @@ namespace $namespace
 ";
 
     #endregion
-
 }
