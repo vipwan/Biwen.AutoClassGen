@@ -147,24 +147,26 @@ GenericAutoInjectAttributeName,
                 if (injectType == InjectAttributeType.Regular)
                 {
                     attributeSyntax = attr.Attributes.FirstOrDefault(x =>
-                        x.Name.ToString().IndexOf(attributeMetadataName, System.StringComparison.Ordinal) == 0);
+                        x.Name.ToString().IndexOf(attributeMetadataName, StringComparison.Ordinal) == 0);
 
                     if (attributeSyntax is null) continue;
                 }
                 else
                 {
+#pragma warning disable CA1031 // 不捕获常规异常类型
                     try
                     {
                         attributeSyntax = attr.Attributes.First(x =>
-                            x.Name.ToString().IndexOf(attributeMetadataName, System.StringComparison.Ordinal) == 0);
+                            x.Name.ToString().IndexOf(attributeMetadataName, StringComparison.Ordinal) == 0);
                     }
                     catch
                     {
                         continue;
                     }
+#pragma warning restore CA1031 // 不捕获常规异常类型
                 }
 
-                if (attrName?.IndexOf(attributeMetadataName, System.StringComparison.Ordinal) == 0)
+                if (attrName?.IndexOf(attributeMetadataName, StringComparison.Ordinal) == 0)
                 {
                     // 提取基类名称
                     string baseTypeName = ExtractBaseTypeName(attributeSyntax, injectType);

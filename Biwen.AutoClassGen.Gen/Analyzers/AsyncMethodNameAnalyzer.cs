@@ -54,6 +54,93 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
 
         #endregion
 
+        #region 排除事件处理方法
+
+        // 排除事件处理方法 (以On开头并且有EventArgs参数)
+        if (methodDeclaration.Identifier.Text.StartsWith("On", StringComparison.Ordinal) &&
+            methodDeclaration.ParameterList.Parameters.Count >= 2)
+        {
+            var secondParam = methodDeclaration.ParameterList.Parameters[1];
+            if (secondParam.Type is IdentifierNameSyntax eventArgsType &&
+                (eventArgsType.Identifier.Text == "EventArgs" ||
+                 eventArgsType.Identifier.Text.EndsWith("EventArgs", StringComparison.Ordinal)))
+            {
+                return;
+            }
+        }
+
+        // 排除事件处理方法（如Button_Click, Page_Load等）
+        if (methodDeclaration.Identifier.Text.Contains("_") &&
+            methodDeclaration.ParameterList.Parameters.Count >= 2)
+        {
+            var secondParam = methodDeclaration.ParameterList.Parameters[1];
+            if (secondParam.Type is IdentifierNameSyntax eventArgsType &&
+                (eventArgsType.Identifier.Text == "EventArgs" ||
+                 eventArgsType.Identifier.Text.EndsWith("EventArgs", StringComparison.Ordinal)))
+            {
+                return;
+            }
+        }
+
+        #endregion
+
+        #region 排除常见的命名模式
+
+        // 排除常见的命名模式如 Handle*, Process* 等处理方法
+        if (methodDeclaration.Identifier.Text.StartsWith("Handle", StringComparison.Ordinal) ||
+            methodDeclaration.Identifier.Text.StartsWith("Process", StringComparison.Ordinal) ||
+            methodDeclaration.Identifier.Text.StartsWith("Execute", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        #endregion
+
+        #region 排除生命周期方法
+
+        // 排除常见框架的生命周期方法
+        var lifecycleMethods = new[] {
+            "OnInitialized", "OnInitializedAsync",
+            "OnParametersSet", "OnParametersSetAsync",
+            "OnAfterRender", "OnAfterRenderAsync",
+            "OnActivated", "OnDeactivated",
+            "OnNavigatedTo", "OnNavigatedFrom",
+            "OnStartup", "OnExit",
+            "OnConfiguring", "OnModelCreating",
+        };
+
+        if (lifecycleMethods.Contains(methodDeclaration.Identifier.Text))
+        {
+            return;
+        }
+
+        #endregion
+
+        #region 排除标有特定特性的方法
+
+        // 检查方法是否有特定特性
+        if (methodDeclaration.AttributeLists.Count > 0)
+        {
+            var attributes = methodDeclaration.AttributeLists
+                .SelectMany(list => list.Attributes)
+                .Select(attr => attr.Name.ToString());
+
+            if (attributes.Any(attr =>
+                attr == "HttpGet" || attr == "HttpPost" || attr == "HttpPut" || attr == "HttpDelete" ||
+                attr == "Route" || attr == "ApiExplorerSettings" ||
+                attr == "IgnoreAsyncNaming" || // 自定义特性
+                attr.StartsWith("GraphQL",StringComparison.Ordinal) ||
+                attr.EndsWith("Operation",StringComparison.Ordinal) ||
+                attr.Contains("Subscription") ||
+                attr.Contains("Handler") ||
+                attr.Contains("Action")))
+            {
+                return;
+            }
+        }
+
+        #endregion
+
         //如果方法是重写的方法则不检查
         if (methodDeclaration.Modifiers.Any(SyntaxKind.OverrideKeyword))
         {
@@ -108,6 +195,34 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
 
             #endregion
 
+            #region 排除特定框架的类
+
+            // 排除gRPC服务类
+            if (parent.Identifier.Text.EndsWith("Service", StringComparison.Ordinal) &&
+                parent.BaseList?.Types.Any(t => t.ToString().Contains("grpc")) == true)
+            {
+                return;
+            }
+
+            // 排除GraphQL类
+            if (parent.AttributeLists.SelectMany(a => a.Attributes)
+                .Any(a => a.Name.ToString().Contains("GraphQL") ||
+                     a.Name.ToString().Contains("Query") ||
+                     a.Name.ToString().Contains("Mutation")))
+            {
+                return;
+            }
+
+            // 排除Minimal API类
+            if (parent.AttributeLists.SelectMany(a => a.Attributes)
+                .Any(a => a.Name.ToString().Contains("ApiEndpoint") ||
+                     a.Name.ToString().Contains("Route")))
+            {
+                return;
+            }
+
+            #endregion
+
             //如果方法的父亲是类,且该方法是接口的实现方法则不检查
             if (context.ContainingSymbol!.ContainingSymbol is ITypeSymbol { } parentSymbol)
             {
@@ -123,6 +238,20 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
                 }
             }
         }
+
+        #region 排除特定函数命名规则
+
+        // 排除特定的方法命名（如WebHook处理方法）
+        if (methodDeclaration.Identifier.Text.EndsWith("Hook", StringComparison.OrdinalIgnoreCase) ||
+            methodDeclaration.Identifier.Text.EndsWith("Handler", StringComparison.OrdinalIgnoreCase) ||
+            methodDeclaration.Identifier.Text.EndsWith("Callback", StringComparison.OrdinalIgnoreCase) ||
+            methodDeclaration.Identifier.Text.EndsWith("Action", StringComparison.OrdinalIgnoreCase) ||
+            methodDeclaration.Identifier.Text.EndsWith("Function", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        #endregion
 
         //如果包含Async关键字
         if (methodDeclaration.Modifiers.Any(SyntaxKind.AsyncKeyword))
