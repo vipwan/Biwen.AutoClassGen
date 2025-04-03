@@ -79,61 +79,102 @@ GenericAutoInjectAttributeName,
 
         #endregion
 
-
         var join = compilationAndTypesInject.Combine(compilationAndTypesInjectG).Combine(compilationAndTypesInjectKeyed);
 
         context.RegisterSourceOutput(join,
-            (ctx,
-            nodes) =>
-        {
-            //程序集命名空间
-            var @namespace = nodes.Left.Left.Item1.AssemblyName ?? nodes.Left.Right.Item1.AssemblyName ?? nodes.Right.Item1.AssemblyName;
+            (ctx, nodes) =>
+            {
+                //程序集命名空间
+                var @namespace = nodes.Left.Left.Item1.AssemblyName ?? nodes.Left.Right.Item1.AssemblyName ?? nodes.Right.Item1.AssemblyName;
 
-            var nodes1 = GetAnnotatedNodesInject(nodes.Left.Left.Item1, nodes.Left.Left.Item2);
-            var nodes2 = GetGenericAnnotatedNodesInject(nodes.Left.Right.Item1, nodes.Left.Right.Item2);
-            var nodes3 = GetAnnotatedNodesInjectKeyed(nodes.Right.Item1, nodes.Right.Item2);
-            GenSource(ctx, [.. nodes1, .. nodes2, .. nodes3], @namespace);
-        });
+                var nodes1 = GetAnnotatedNodes(nodes.Left.Left.Item1, nodes.Left.Left.Item2, InjectAttributeType.Regular);
+                var nodes2 = GetAnnotatedNodes(nodes.Left.Right.Item1, nodes.Left.Right.Item2, InjectAttributeType.Generic);
+                var nodes3 = GetAnnotatedNodes(nodes.Right.Item1, nodes.Right.Item2, InjectAttributeType.Keyed);
+                GenSource(ctx, [.. nodes1, .. nodes2, .. nodes3], @namespace);
+            });
     }
 
     /// <summary>
-    /// Get AutoInjectAttribute G
+    /// 提取注入元数据
     /// </summary>
-    /// <param name="compilation"></param>
-    /// <param name="nodes"></param>
-    private static List<AutoInjectMetadata> GetGenericAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+    /// <param name="compilation">编译上下文</param>
+    /// <param name="nodes">语法节点集合</param>
+    /// <param name="injectType">注入类型</param>
+    /// <returns>注入元数据列表</returns>
+    private static List<AutoInjectMetadata> GetAnnotatedNodes(
+        Compilation compilation,
+        ImmutableArray<SyntaxNode> nodes,
+        InjectAttributeType injectType)
     {
         if (nodes.Length == 0) return [];
+
         // 注册的服务
         List<AutoInjectMetadata> autoInjects = [];
         List<string> namespaces = [];
 
+        // 确定属性名称
+        string attributeMetadataName = injectType switch
+        {
+            InjectAttributeType.Regular => AttributeValueMetadataNameInject,
+            InjectAttributeType.Generic => AttributeValueMetadataNameInject,
+            InjectAttributeType.Keyed => AutoInjectKeyedMetadataNameInject,
+            _ => AttributeValueMetadataNameInject,
+        };
+
+        // 确定生命周期前缀
+        string lifetimePrefix = injectType == InjectAttributeType.Keyed ? "AddKeyed" : "Add";
+
         foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
         {
             AttributeSyntax? attributeSyntax = null;
+            string? attrName = null;
+
+            // 查找属性
             foreach (var attr in node.AttributeLists.AsEnumerable())
             {
-                var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0);
-
-                if (attrName?.IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0)
+                if (injectType == InjectAttributeType.Keyed)
                 {
-                    //转译的Entity类名
-                    var baseTypeName = string.Empty;
+                    attrName = attr.Attributes.FirstOrDefault(x =>
+                        x.Name.ToString().Contains(attributeMetadataName))?.Name.ToString();
+                    if (attrName is null) continue;
+                }
+                else
+                {
+                    attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
+                }
 
-                    string pattern = @"(?<=<)(?<type>\w+)(?=>)";
-                    var match = Regex.Match(attributeSyntax.ToString(), pattern);
-                    if (match.Success)
+                // 查找特定的属性
+                if (injectType == InjectAttributeType.Regular)
+                {
+                    attributeSyntax = attr.Attributes.FirstOrDefault(x =>
+                        x.Name.ToString().IndexOf(attributeMetadataName, System.StringComparison.Ordinal) == 0);
+
+                    if (attributeSyntax is null) continue;
+                }
+                else
+                {
+                    try
                     {
-                        baseTypeName = match.Groups["type"].Value.Split(['.']).Last();
+                        attributeSyntax = attr.Attributes.First(x =>
+                            x.Name.ToString().IndexOf(attributeMetadataName, System.StringComparison.Ordinal) == 0);
                     }
-                    else
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                if (attrName?.IndexOf(attributeMetadataName, System.StringComparison.Ordinal) == 0)
+                {
+                    // 提取基类名称
+                    string baseTypeName = ExtractBaseTypeName(attributeSyntax, injectType);
+                    if (string.IsNullOrEmpty(baseTypeName) && injectType != InjectAttributeType.Regular)
                     {
                         continue;
                     }
 
+                    // 获取实现类名称
                     var implTypeName = node.Identifier.ValueText;
-                    //var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
                     var symbols = compilation.GetSymbolsWithName(implTypeName);
                     foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
                     {
@@ -141,133 +182,13 @@ GenericAutoInjectAttributeName,
                         break;
                     }
 
-                    var baseSymbols = compilation.GetSymbolsWithName(baseTypeName);
-                    foreach (ITypeSymbol baseSymbol in baseSymbols.Cast<ITypeSymbol>())
-                    {
-                        baseTypeName = baseSymbol.ToDisplayString();
-                        break;
-                    }
-
-                    string lifeTime = "AddScoped"; //default
-                    {
-                        if (attributeSyntax.ArgumentList != null)
-                        {
-                            for (var i = 0; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
-                            {
-                                var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
-                                if (expressionSyntax.IsKind(SyntaxKind.SimpleMemberAccessExpression))
-                                {
-                                    var name = (expressionSyntax as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText;
-                                    lifeTime = name switch
-                                    {
-                                        "Singleton" => "AddSingleton",
-                                        "Transient" => "AddTransient",
-                                        "Scoped" => "AddScoped",
-                                        _ => "AddScoped",
-                                    };
-                                    break;
-                                }
-                            }
-                        }
-
-                        autoInjects.Add(new AutoInjectMetadata(
-                            implTypeName,
-                            baseTypeName,
-                            lifeTime
-                            ));
-
-                        //命名空间
-                        symbols = compilation.GetSymbolsWithName(baseTypeName);
-                        foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
-                        {
-                            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
-                            // 命名空间
-                            if (!namespaces.Contains(fullNameSpace))
-                            {
-                                namespaces.Add(fullNameSpace);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return autoInjects;
-
-        //_injectDefines.AddRange(autoInjects);
-        //_namespaces.AddRange(namespaces);
-    }
-
-    /// <summary>
-    /// Get AutoInjectAttribute
-    /// </summary>
-    /// <param name="compilation"></param>
-    /// <param name="nodes"></param>
-    private static List<AutoInjectMetadata> GetAnnotatedNodesInject(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
-    {
-        if (nodes.Length == 0) return [];
-        // 注册的服务
-        List<AutoInjectMetadata> autoInjects = [];
-        List<string> namespaces = [];
-
-        foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
-        {
-            AttributeSyntax? attributeSyntax = null;
-            foreach (var attr in node.AttributeLists.AsEnumerable())
-            {
-                var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                attributeSyntax = attr.Attributes.FirstOrDefault(x => x.Name.ToString().IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0);
-
-                //其他的特性直接跳过
-                if (attributeSyntax is null) continue;
-
-                if (attrName?.IndexOf(AttributeValueMetadataNameInject, System.StringComparison.Ordinal) == 0)
-                {
-                    var implTypeName = node.Identifier.ValueText;
-                    //var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
-                    var symbols = compilation.GetSymbolsWithName(implTypeName);
-                    foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
-                    {
-                        implTypeName = symbol.ToDisplayString();
-                        break;
-                    }
-
-                    //转译的Entity类名
-                    var baseTypeName = string.Empty;
-
-                    if (attributeSyntax.ArgumentList == null || attributeSyntax.ArgumentList!.Arguments.Count == 0)
+                    // 如果是普通注入且没有指定基类，实现类就是基类
+                    if (string.IsNullOrEmpty(baseTypeName) && injectType == InjectAttributeType.Regular)
                     {
                         baseTypeName = implTypeName;
                     }
-                    else
-                    {
-                        if (attributeSyntax.ArgumentList!.Arguments[0].Expression is TypeOfExpressionSyntax)
-                        {
-                            var eType = (attributeSyntax.ArgumentList!.Arguments[0].Expression as TypeOfExpressionSyntax)!.Type;
-                            if (eType.IsKind(SyntaxKind.IdentifierName))
-                            {
-                                baseTypeName = (eType as IdentifierNameSyntax)!.Identifier.ValueText;
-                            }
-                            else if (eType.IsKind(SyntaxKind.QualifiedName))
-                            {
-                                baseTypeName = (eType as QualifiedNameSyntax)!.ToString().Split(['.']).Last();
-                            }
-                            else if (eType.IsKind(SyntaxKind.AliasQualifiedName))
-                            {
-                                baseTypeName = (eType as AliasQualifiedNameSyntax)!.ToString().Split(['.']).Last();
-                            }
-                            if (string.IsNullOrEmpty(baseTypeName))
-                            {
-                                baseTypeName = implTypeName;
-                            }
-                        }
-                        else
-                        {
-                            baseTypeName = implTypeName;
-                        }
-                    }
 
-
+                    // 获取完整的基类名称
                     var baseSymbols = compilation.GetSymbolsWithName(baseTypeName);
                     foreach (ITypeSymbol baseSymbol in baseSymbols.Cast<ITypeSymbol>())
                     {
@@ -275,177 +196,186 @@ GenericAutoInjectAttributeName,
                         break;
                     }
 
-                    string lifeTime = "AddScoped"; //default
+                    // 处理Keyed注入的键
+                    string? key = null;
+                    if (injectType == InjectAttributeType.Keyed)
                     {
-                        if (attributeSyntax.ArgumentList != null)
-                        {
-                            for (var i = 0; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
-                            {
-                                var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
-                                if (expressionSyntax.IsKind(SyntaxKind.SimpleMemberAccessExpression))
-                                {
-                                    var name = (expressionSyntax as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText;
-                                    lifeTime = name switch
-                                    {
-                                        "Singleton" => "AddSingleton",
-                                        "Transient" => "AddTransient",
-                                        "Scoped" => "AddScoped",
-                                        _ => "AddScoped",
-                                    };
-                                    break;
-                                }
-                            }
-                        }
-
-                        autoInjects.Add(new AutoInjectMetadata(
-                            implTypeName,
-                            baseTypeName,
-                            lifeTime));
-
-                        //命名空间
-                        symbols = compilation.GetSymbolsWithName(baseTypeName);
-                        foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
-                        {
-                            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
-                            // 命名空间
-                            if (!namespaces.Contains(fullNameSpace))
-                            {
-                                namespaces.Add(fullNameSpace);
-                            }
-                        }
+                        key = ExtractKeyFromAttribute(attributeSyntax);
                     }
+
+                    // 确定生命周期
+                    string lifeTime = DetermineLifetime(attributeSyntax, injectType, lifetimePrefix);
+
+                    // 创建元数据
+                    var metadata = new AutoInjectMetadata(
+                        implTypeName,
+                        baseTypeName,
+                        lifeTime);
+
+                    if (key != null)
+                    {
+                        metadata.Key = key;
+                    }
+
+                    autoInjects.Add(metadata);
+
+                    // 添加命名空间
+                    AddNamespaces(compilation, baseTypeName, namespaces);
+
+                    break; // 找到了属性，跳出循环
                 }
             }
         }
 
-        //_injectDefines.AddRange(autoInjects);
-        //_namespaces.AddRange(namespaces);
-
         return autoInjects;
-
     }
 
-
-    //获取keyed的Define
-    private static List<AutoInjectMetadata> GetAnnotatedNodesInjectKeyed(Compilation compilation, ImmutableArray<SyntaxNode> nodes)
+    /// <summary>
+    /// 从属性中提取基类类型名称
+    /// </summary>
+    private static string ExtractBaseTypeName(AttributeSyntax attributeSyntax, InjectAttributeType injectType)
     {
-        if (nodes.Length == 0) return [];
-        // 注册的服务
-        List<AutoInjectMetadata> autoInjects = [];
-        List<string> namespaces = [];
-
-        foreach (ClassDeclarationSyntax node in nodes.AsEnumerable().Cast<ClassDeclarationSyntax>())
+        if (injectType == InjectAttributeType.Regular)
         {
-            AttributeSyntax? attributeSyntax = null;
-            foreach (var attr in node.AttributeLists.AsEnumerable())
+            if (attributeSyntax.ArgumentList == null || attributeSyntax.ArgumentList.Arguments.Count == 0)
             {
-                var attrName = attr.Attributes.FirstOrDefault(x => x.Name.ToString().Contains(AutoInjectKeyedMetadataNameInject))?.Name.ToString();
-                if (attrName is null) { continue; }
+                return string.Empty; // 返回空，由调用方处理
+            }
 
-                attributeSyntax = attr.Attributes.First(x => x.Name.ToString().IndexOf(AutoInjectKeyedMetadataNameInject, System.StringComparison.Ordinal) == 0);
-
-                if (attrName?.IndexOf(AutoInjectKeyedMetadataNameInject, System.StringComparison.Ordinal) == 0)
+            if (attributeSyntax.ArgumentList.Arguments[0].Expression is TypeOfExpressionSyntax typeOfExpression)
+            {
+                var eType = typeOfExpression.Type;
+                if (eType.IsKind(SyntaxKind.IdentifierName))
                 {
-                    //转译的Entity类名
-                    var baseTypeName = string.Empty;
-
-                    string pattern = @"(?<=<)(?<type>\w+)(?=>)";
-                    var match = Regex.Match(attributeSyntax.ToString(), pattern);
-                    if (match.Success)
-                    {
-                        baseTypeName = match.Groups["type"].Value.Split(['.']).Last();
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-                    var implTypeName = node.Identifier.ValueText;
-                    //var rootNamespace = node.AncestorsAndSelf().OfType<NamespaceDeclarationSyntax>().Single().Name.ToString();
-                    var symbols = compilation.GetSymbolsWithName(implTypeName);
-                    foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
-                    {
-                        implTypeName = symbol.ToDisplayString();
-                        break;
-                    }
-
-                    var baseSymbols = compilation.GetSymbolsWithName(baseTypeName);
-                    foreach (ITypeSymbol baseSymbol in baseSymbols.Cast<ITypeSymbol>())
-                    {
-                        baseTypeName = baseSymbol.ToDisplayString();
-                        break;
-                    }
-
-                    string? key = attributeSyntax.ArgumentList?.Arguments[0].Expression.ToString();
-
-                    //使用正则表达式取双引号中的内容:
-                    //字符串的情况: "test2"
-                    string keyPattern1 = "\"(.*?)\"";
-
-                    if (Regex.IsMatch(key, keyPattern1))
-                    {
-                        key = Regex.Match(key, keyPattern1).Groups[1].Value;
-                    }
-
-                    //使用正则表达式取括号中的内容:
-                    //nameof的情况: nameof(TestService2)
-                    string keyPattern2 = @"\((.*?)\)";
-                    if (Regex.IsMatch(key, keyPattern2))
-                    {
-                        key = Regex.Match(key, keyPattern2).Groups[1].Value;
-                        //分割.取最后一个
-                        key = key.Split(['.']).Last();
-                    }
-
-
-                    string lifeTime = "AddKeyedScoped"; //default
-                    {
-                        if (attributeSyntax.ArgumentList != null)
-                        {
-                            for (var i = 1; i < attributeSyntax.ArgumentList!.Arguments.Count; i++)
-                            {
-                                var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
-                                if (expressionSyntax.IsKind(SyntaxKind.SimpleMemberAccessExpression))
-                                {
-                                    var name = (expressionSyntax as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText;
-                                    lifeTime = name switch
-                                    {
-                                        "Singleton" => "AddKeyedSingleton",
-                                        "Transient" => "AddKeyedTransient",
-                                        "Scoped" => "AddKeyedScoped",
-                                        _ => "AddKeyedScoped",
-                                    };
-                                    break;
-                                }
-                            }
-                        }
-
-                        autoInjects.Add(new AutoInjectMetadata(
-                            implTypeName,
-                            baseTypeName,
-                            lifeTime)
-                        {
-                            Key = key,
-                        });
-
-                        //命名空间
-                        symbols = compilation.GetSymbolsWithName(baseTypeName);
-                        foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
-                        {
-                            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
-                            // 命名空间
-                            if (!namespaces.Contains(fullNameSpace))
-                            {
-                                namespaces.Add(fullNameSpace);
-                            }
-                        }
-                    }
+                    return (eType as IdentifierNameSyntax)!.Identifier.ValueText;
                 }
+                else if (eType.IsKind(SyntaxKind.QualifiedName))
+                {
+                    return (eType as QualifiedNameSyntax)!.ToString().Split(['.']).Last();
+                }
+                else if (eType.IsKind(SyntaxKind.AliasQualifiedName))
+                {
+                    return (eType as AliasQualifiedNameSyntax)!.ToString().Split(['.']).Last();
+                }
+            }
+
+            return string.Empty;
+        }
+        else // Generic或Keyed
+        {
+            string pattern = @"(?<=<)(?<type>\w+)(?=>)";
+            var match = Regex.Match(attributeSyntax.ToString(), pattern);
+            if (match.Success)
+            {
+                return match.Groups["type"].Value.Split(['.']).Last();
+            }
+
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// 从Keyed属性中提取键
+    /// </summary>
+    private static string? ExtractKeyFromAttribute(AttributeSyntax attributeSyntax)
+    {
+        if (attributeSyntax.ArgumentList?.Arguments.Count > 0)
+        {
+            string? key = attributeSyntax.ArgumentList.Arguments[0].Expression.ToString();
+
+            // 处理字符串形式的键
+            string keyPattern1 = "\"(.*?)\"";
+            if (Regex.IsMatch(key, keyPattern1))
+            {
+                return Regex.Match(key, keyPattern1).Groups[1].Value;
+            }
+
+            // 处理nameof形式的键
+            string keyPattern2 = @"\((.*?)\)";
+            if (Regex.IsMatch(key, keyPattern2))
+            {
+                key = Regex.Match(key, keyPattern2).Groups[1].Value;
+                return key.Split(['.']).Last();
+            }
+
+            return key;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 确定服务生命周期
+    /// </summary>
+    private static string DetermineLifetime(AttributeSyntax attributeSyntax, InjectAttributeType injectType, string prefix)
+    {
+        string defaultLifetime = $"{prefix}Scoped";
+
+        if (attributeSyntax.ArgumentList == null)
+        {
+            return defaultLifetime;
+        }
+
+        // Keyed注入从第二个参数开始查找生命周期
+        int startIndex = injectType == InjectAttributeType.Keyed ? 1 : 0;
+
+        for (var i = startIndex; i < attributeSyntax.ArgumentList.Arguments.Count; i++)
+        {
+            var expressionSyntax = attributeSyntax.ArgumentList.Arguments[i].Expression;
+            if (expressionSyntax.IsKind(SyntaxKind.SimpleMemberAccessExpression))
+            {
+                var name = (expressionSyntax as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText;
+                return name switch
+                {
+                    "Singleton" => $"{prefix}Singleton",
+                    "Transient" => $"{prefix}Transient",
+                    "Scoped" => $"{prefix}Scoped",
+                    _ => defaultLifetime,
+                };
             }
         }
 
-        return autoInjects;
+        return defaultLifetime;
     }
+
+    /// <summary>
+    /// 添加命名空间
+    /// </summary>
+    private static void AddNamespaces(Compilation compilation, string typeName, List<string> namespaces)
+    {
+        var symbols = compilation.GetSymbolsWithName(typeName);
+        foreach (ITypeSymbol symbol in symbols.Cast<ITypeSymbol>())
+        {
+            var fullNameSpace = symbol.ContainingNamespace.ToDisplayString();
+            if (!namespaces.Contains(fullNameSpace))
+            {
+                namespaces.Add(fullNameSpace);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 注入属性类型
+    /// </summary>
+    private enum InjectAttributeType
+    {
+        /// <summary>
+        /// 普通注入
+        /// </summary>
+        Regular,
+
+        /// <summary>
+        /// 泛型注入
+        /// </summary>
+        Generic,
+
+        /// <summary>
+        /// 带键的注入
+        /// </summary>
+        Keyed,
+    }
+
+
 
     //private static readonly object _lock = new();
     /// <summary>
