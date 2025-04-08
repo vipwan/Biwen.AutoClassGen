@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
-		<PackageVersion>1.6.0</PackageVersion>
+		<PackageVersion>1.7.0</PackageVersion>
 		<PackageProjectUrl>https://github.com/vipwan/Biwen.AutoClassGen</PackageProjectUrl>
 		<Authors>万雅虎</Authors>
 		<RepositoryUrl>https://github.com/vipwan/Biwen.AutoClassGen</RepositoryUrl>
