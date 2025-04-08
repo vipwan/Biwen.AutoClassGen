@@ -28,6 +28,9 @@ namespace Biwen.AutoClassGen.Models
     }
 
 
+    /// <summary>
+    /// <see cref="IMyInterface.MyMethod"/>
+    /// </summary>
     public interface IMyInterface
     {
         string? Id { get; set; }
@@ -37,6 +40,9 @@ namespace Biwen.AutoClassGen.Models
     }
 
 
+    /// <summary>
+    /// <seealso cref="MyClass.Get2"/>
+    /// </summary>
     public class MyClass : IMyInterface
     {
         public string? Id { get; set; }
