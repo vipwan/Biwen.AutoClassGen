@@ -4,7 +4,6 @@
 
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Biwen.AutoClassGen.Analyzers;
 
@@ -80,106 +79,112 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
         if (attributeLists.Count == 0)
             return;
 
-        //如果被标记的类重复标注[AutoDto],则不生成:
-        //同时包含泛型和非泛型的情况
-        if (attributeLists.SelectMany(x => x.Attributes).Where(x => x.Name.ToString().IndexOf("AutoDto", StringComparison.Ordinal) == 0).Count() > 1)
+        // 筛选出所有 AutoDto 相关的特性
+        var autoDtoAttributes = attributeLists
+            .SelectMany(x => x.Attributes)
+            .Where(x => x.Name.ToString().IndexOf("AutoDto", StringComparison.Ordinal) == 0)
+            .ToList();
+
+        if (autoDtoAttributes.Count == 0)
+            return;
+
+        // 检查是否重复标注 [AutoDto]
+        if (autoDtoAttributes.Count > 1)
         {
-            var location = Location.Create(classDeclaration.SyntaxTree, TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
-            // issue error
+            var location = Location.Create(classDeclaration.SyntaxTree,
+                TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
             context.ReportDiagnostic(Diagnostic.Create(RuleGEN041, location));
         }
 
-        foreach (var attributeList in attributeLists)
+        // 检查是否含有 partial 关键字
+        if (!classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
         {
-            foreach (var attribute in attributeList.Attributes)
+            var location = Location.Create(classDeclaration.SyntaxTree,
+                TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
+            context.ReportDiagnostic(Diagnostic.Create(RuleGEN045, location));
+        }
+
+        // 检查是否是抽象类
+        if (classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword)))
+        {
+            var location = Location.Create(classDeclaration.SyntaxTree,
+                TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
+            context.ReportDiagnostic(Diagnostic.Create(RuleGEN042, location));
+        }
+
+        // 遍历每个 AutoDto 特性，提取并验证实体类型
+        foreach (var attribute in autoDtoAttributes)
+        {
+            string? entityName = null;
+
+            // 处理泛型特性和非泛型特性
+            if (attribute.Name is GenericNameSyntax genericName)
             {
-                if (!attribute.Name.ToString().Contains("AutoDto"))
-                    continue;
-
-                //如果被标记的类不含partial关键字,则不生成:
-                if (!classDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword))
+                // 泛型特性: [AutoDto<EntityType>]
+                var typeArg = genericName.TypeArgumentList.Arguments.FirstOrDefault();
+                if (typeArg != null)
                 {
-                    //定位到类的第一行 0~class关键字结束位置:
-                    var location = Location.Create(classDeclaration.SyntaxTree,
-                        TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start,
-                        classDeclaration.Identifier.Span.End));
-
-                    var diagnostic = Diagnostic.Create(RuleGEN045, location);
-                    context.ReportDiagnostic(diagnostic);
+                    entityName = GetSimpleTypeName(typeArg);
                 }
-
-                //如果被标记的类重复标注[AutoDto],则不生成:
-                //同时包含泛型和非泛型的情况
-                if (attributeList.Attributes.Where(x => x.Name.ToString().IndexOf("AutoDto", StringComparison.Ordinal) == 0).Count() > 1)
+            }
+            else
+            {
+                // 非泛型特性: [AutoDto(typeof(EntityType))]
+                var argument = attribute.ArgumentList?.Arguments.FirstOrDefault();
+                if (argument != null)
                 {
-                    var location = attributeList.GetLocation();
-                    // issue error
-                    context.ReportDiagnostic(Diagnostic.Create(RuleGEN041, location));
-                }
-
-                //如果被标记的类是抽象类,则不生成:
-                if (classDeclaration.Modifiers.Any(SyntaxKind.AbstractKeyword))
-                {
-                    //定位到类的第一行 0~class关键字结束位置:
-                    var location = Location.Create(classDeclaration.SyntaxTree,
-                        TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start,
-                        classDeclaration.Identifier.Span.End));
-                    var diagnostic = Diagnostic.Create(RuleGEN042, location);
-                    context.ReportDiagnostic(diagnostic);
-                }
-
-                if (attribute.Name is not GenericNameSyntax)
-                {
-                    var argument = attribute.ArgumentList?.Arguments.FirstOrDefault();
-                    if (argument is null)
-                        return;
-
-                    var attributeSyntax = argument.Expression;
-                    string pattern = @"(?<=<)(?<type>\w+)(?=>)";
-                    var match = Regex.Match(attributeSyntax.ToString(), pattern);
-
-                    //转译的Entity类名
-                    string? entityName;
-                    if (match.Success)
+                    var expression = argument.Expression;
+                    if (expression is TypeOfExpressionSyntax typeOfExpr)
                     {
-                        entityName = match.Groups["type"].Value.Split(['.']).Last();
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-                    // 查找对象是否属于当前编译库:
-                    var symbols = context.SemanticModel.Compilation.GetSymbolsWithName(entityName, SymbolFilter.Type);
-                    var symbol = symbols.Cast<ITypeSymbol>().FirstOrDefault();
-
-                    if (symbol is null)
-                    {
-                        //如果没有找到对应的类,则报错
-                        var diagnostic = Diagnostic.Create(RuleGEN044, attribute.GetLocation());
-                        context.ReportDiagnostic(diagnostic);
+                        entityName = GetSimpleTypeName(typeOfExpr.Type);
                     }
                 }
-                else
+            }
+
+            // 如果成功提取了实体名称，验证它是否存在于当前编译中
+            if (!string.IsNullOrEmpty(entityName))
+            {
+                var symbols = context.SemanticModel.Compilation.GetSymbolsWithName(entityName!, SymbolFilter.Type);
+                var symbol = symbols.Cast<ITypeSymbol>().FirstOrDefault();
+
+                if (symbol is null)
                 {
-                    //泛型语法:
-                    var genericName = (GenericNameSyntax)attribute.Name;
-                    var entityName = genericName.TypeArgumentList.Arguments.FirstOrDefault()?.ToString();
-                    if (entityName is null)
-                        return;
-
-                    // 查找对象是否属于当前编译库:
-                    var symbols = context.SemanticModel.Compilation.GetSymbolsWithName(entityName, SymbolFilter.Type);
-                    var symbol = symbols.Cast<ITypeSymbol>().FirstOrDefault();
-
-                    if (symbol is null)
-                    {
-                        //如果没有找到对应的类,则报错
-                        var diagnostic = Diagnostic.Create(RuleGEN044, attribute.GetLocation());
-                        context.ReportDiagnostic(diagnostic);
-                    }
+                    // 如果没有找到对应的类，报错
+                    context.ReportDiagnostic(Diagnostic.Create(RuleGEN044, attribute.GetLocation()));
                 }
             }
         }
     }
+
+    /// <summary>
+    /// 获取类型的简单名称（不包含命名空间）
+    /// </summary>
+    /// <param name="type">类型语法</param>
+    /// <returns>简单类型名</returns>
+    private static string GetSimpleTypeName(TypeSyntax type)
+    {
+        switch (type)
+        {
+            case IdentifierNameSyntax identifierName:
+                return identifierName.Identifier.ValueText;
+
+            case QualifiedNameSyntax qualifiedName:
+                // 对于限定名，返回最后一部分
+                return qualifiedName.Right.Identifier.ValueText;
+
+            case AliasQualifiedNameSyntax aliasQualifiedName:
+                return aliasQualifiedName.Name.Identifier.ValueText;
+
+            case GenericNameSyntax genericName:
+                // 对于泛型名称，只返回基础类型名（不含泛型参数）
+                return genericName.Identifier.ValueText;
+
+            default:
+                // 对于其他情况，转为字符串并尝试取最后一段
+                var fullName = type.ToString();
+                var lastDotIndex = fullName.LastIndexOf('.');
+                return lastDotIndex >= 0 ? fullName.Substring(lastDotIndex + 1) : fullName;
+        }
+    }
+
 }

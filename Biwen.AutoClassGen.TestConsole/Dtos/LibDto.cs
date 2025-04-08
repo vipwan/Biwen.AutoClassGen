@@ -32,7 +32,7 @@ public class TClass<T>
 {
     public T? Id { get; set; }
 
-    [StringLength(100,MinimumLength = 5)]
+    [StringLength(100, MinimumLength = 5)]
     public string? Hello { get; set; }
 }
 
@@ -41,4 +41,18 @@ public class TImplClass : TClass<string>
     [Required]
     [Description("hello world")]
     public string? World { get; set; }
+
+    [EmailAddress]
+    public string? Email { get; set; }
+
+    [Url]
+    public string HostUrl { get; set; } = "https://www.baidu.com";
+
+    [Phone]
+    public string PhoneNumber { get; set; } = "1234567890";
+
+    [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "Only alphanumeric characters are allowed.")]
+    public string? RegText { get; set; }
+
+
 }

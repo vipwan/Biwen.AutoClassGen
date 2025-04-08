@@ -1,11 +1,10 @@
-﻿// <copyright file="SourceGenCodeFixProvider.cs" company="PlaceholderCompany">
+﻿// <copyright file="AutoDtoSourceGenerator.cs" company="vipwan">
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Biwen.AutoClassGen;
 
@@ -27,12 +26,20 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
         var nodesDto = context.SyntaxProvider.ForAttributeWithMetadataName(
             AttributeMetadataNameDto,
-            (context, _) => true,
+            // 添加初步过滤：必须是类型声明，且必须是 partial 类，且不能是抽象类
+            (syntaxNode, _) =>
+                syntaxNode is TypeDeclarationSyntax typeDecl &&
+                typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)) &&
+                !typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword)),
             (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
         var nodesDtoG = context.SyntaxProvider.ForAttributeWithMetadataName(
             GenericAutoDtoAttributeName,
-            (context, attributeSyntax) => true,
+            // 添加相同的初步过滤条件
+            (syntaxNode, _) =>
+                syntaxNode is TypeDeclarationSyntax typeDecl &&
+                typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)) &&
+                !typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword)),
             (syntaxContext, _) => syntaxContext.TargetNode).Collect();
 
         #endregion
@@ -49,6 +56,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             });
     }
 
+
     /// <summary>
     /// 从普通AutoDto或泛型AutoDto属性中提取元数据
     /// </summary>
@@ -62,20 +70,13 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
         foreach (var syntaxNode in nodes.AsEnumerable())
         {
-            if (syntaxNode is not TypeDeclarationSyntax node)
-            {
-                continue;
-            }
+            // 已经确保是 TypeDeclarationSyntax，可以安全转换
+            var node = (TypeDeclarationSyntax)syntaxNode;
 
             // 如果是Record类
             var isRecord = syntaxNode is RecordDeclarationSyntax;
 
-            // 如果不含partial关键字,则不生成
-            if (!node.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
-            {
-                continue;
-            }
-
+            // 不再需要检查 partial 修饰符，因为在谓词函数中已经筛选过了
             AttributeSyntax? attributeSyntax = null;
             foreach (var attr in node.AttributeLists.AsEnumerable())
             {
@@ -122,34 +123,76 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
     /// <summary>
     /// 从属性中提取实体名称
     /// </summary>
+    /// <summary>
+    /// 从属性中提取实体名称
+    /// </summary>
     private static string ExtractEntityName(AttributeSyntax attributeSyntax, bool isGeneric)
     {
         if (isGeneric)
         {
-            string pattern = @"(?<=<)(?<type>\w+)(?=>)";
-            var match = Regex.Match(attributeSyntax.ToString(), pattern);
-            if (match.Success)
+            // 使用 Roslyn 语法 API 来获取泛型类型参数
+            if (attributeSyntax.Name is GenericNameSyntax genericName)
             {
-                return match.Groups["type"].Value.Split(['.']).Last();
+                // 直接获取泛型参数列表中的第一个类型
+                if (genericName.TypeArgumentList.Arguments.Count > 0)
+                {
+                    var typeArg = genericName.TypeArgumentList.Arguments[0];
+                    return GetSimpleTypeName(typeArg);
+                }
             }
             return string.Empty;
         }
         else
         {
-            var eType = (attributeSyntax.ArgumentList!.Arguments[0].Expression as TypeOfExpressionSyntax)!.Type;
-            if (eType.IsKind(SyntaxKind.IdentifierName))
+            // 处理非泛型情况，即 typeof(Type) 形式的参数
+            if (attributeSyntax.ArgumentList?.Arguments.Count > 0)
             {
-                return (eType as IdentifierNameSyntax)!.Identifier.ValueText;
-            }
-            else if (eType.IsKind(SyntaxKind.QualifiedName))
-            {
-                return (eType as QualifiedNameSyntax)!.ToString().Split(['.']).Last();
-            }
-            else if (eType.IsKind(SyntaxKind.AliasQualifiedName))
-            {
-                return (eType as AliasQualifiedNameSyntax)!.ToString().Split(['.']).Last();
+                var expression = attributeSyntax.ArgumentList.Arguments[0].Expression;
+                if (expression is TypeOfExpressionSyntax typeOfExpr)
+                {
+                    return GetSimpleTypeName(typeOfExpr.Type);
+                }
             }
             return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// 获取简单类型名称
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    private static string GetSimpleTypeName(TypeSyntax type)
+    {
+        switch (type)
+        {
+            case IdentifierNameSyntax identifierName:
+                return identifierName.Identifier.ValueText;
+
+            case QualifiedNameSyntax qualifiedName:
+                // 对于限定名，返回最后一部分
+                return qualifiedName.Right.Identifier.ValueText;
+
+            case AliasQualifiedNameSyntax aliasQualifiedName:
+                return aliasQualifiedName.Name.Identifier.ValueText;
+
+            case GenericNameSyntax genericName:
+                // 对于泛型名称，只返回基础类型名（不含泛型参数）
+                return genericName.Identifier.ValueText;
+
+            case ArrayTypeSyntax arrayType:
+                // 处理数组类型
+                return GetSimpleTypeName(arrayType.ElementType);
+
+            case NullableTypeSyntax nullableType:
+                // 处理可空类型
+                return GetSimpleTypeName(nullableType.ElementType);
+
+            default:
+                // 对于其他情况，转为字符串并尝试取最后一段
+                var fullName = type.ToString();
+                var lastDotIndex = fullName.LastIndexOf('.');
+                return lastDotIndex >= 0 ? fullName.Substring(lastDotIndex + 1) : fullName;
         }
     }
 
@@ -197,6 +240,12 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             else if (expressionSyntax.IsKind(SyntaxKind.StringLiteralExpression))
             {
                 var name = (expressionSyntax as LiteralExpressionSyntax)!.Token.ValueText;
+                escapes.Add(name);
+            }
+            else if (expressionSyntax.IsKind(SyntaxKind.IdentifierName))
+            {
+                // 处理标识符名称
+                var name = (expressionSyntax as IdentifierNameSyntax)!.Identifier.ValueText;
                 escapes.Add(name);
             }
         }
@@ -275,7 +324,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                         {
                             namespaces.Add("System.ComponentModel");
                         }
-                        
+
                         // 确保添加System.ComponentModel.DataAnnotations命名空间
                         if (!namespaces.Contains("System.ComponentModel.DataAnnotations"))
                         {
@@ -328,7 +377,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                             var minLength = attribute.NamedArguments
                                                 .FirstOrDefault(na => na.Key == "MinimumLength")
                                                 .Value.Value?.ToString();
-                                            
+
                                             if (!string.IsNullOrEmpty(minLength))
                                             {
                                                 attributesBuilder.AppendLine($"[StringLength({maxLength}, MinimumLength = {minLength})]");
@@ -339,6 +388,59 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                             }
                                         }
                                     }
+                                    // 查找Range特性
+                                    else if (attribute.AttributeClass?.Name == "RangeAttribute")
+                                    {
+                                        var min = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() : null;
+                                        var max = attribute.ConstructorArguments.Length > 1 ? attribute.ConstructorArguments[1].Value?.ToString() : null;
+                                        if (!string.IsNullOrEmpty(min) && !string.IsNullOrEmpty(max))
+                                        {
+                                            attributesBuilder.AppendLine($"[Range({min}, {max})]");
+                                        }
+                                    }
+                                    // 查找Display特性
+                                    else if (attribute.AttributeClass?.Name == "DisplayAttribute")
+                                    {
+                                        var name = attribute.NamedArguments.FirstOrDefault(na => na.Key == "Name").Value.Value?.ToString();
+                                        if (!string.IsNullOrEmpty(name))
+                                        {
+                                            attributesBuilder.AppendLine($"[Display(Name = \"{name}\")]");
+                                        }
+                                    }
+                                    // EmailAddress
+                                    else if (attribute.AttributeClass?.Name == "EmailAddressAttribute")
+                                    {
+                                        attributesBuilder.AppendLine("[EmailAddress]");
+                                    }
+                                    // Url
+                                    else if (attribute.AttributeClass?.Name == "UrlAttribute")
+                                    {
+                                        attributesBuilder.AppendLine("[Url]");
+                                    }
+                                    // Phone
+                                    else if (attribute.AttributeClass?.Name == "PhoneAttribute")
+                                    {
+                                        attributesBuilder.AppendLine("[Phone]");
+                                    }
+                                    // RegularExpression
+                                    else if (attribute.AttributeClass?.Name == "RegularExpressionAttribute")
+                                    {
+                                        //pattern必须包含,ErrorMessage可能不存在
+                                        var pattern = attribute.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                                        var errorMessage = attribute.NamedArguments.FirstOrDefault(na => na.Key == "ErrorMessage").Value.Value?.ToString();
+                                        if (!string.IsNullOrEmpty(pattern))
+                                        {
+                                            if (!string.IsNullOrEmpty(errorMessage))
+                                            {
+                                                attributesBuilder.AppendLine($"[RegularExpression(\"{pattern}\", ErrorMessage = \"{errorMessage}\")]");
+                                            }
+                                            else
+                                            {
+                                                attributesBuilder.AppendLine($"[RegularExpression(\"{pattern}\")]");
+                                            }
+                                        }
+                                    }
+                                    // 其他特性可以根据需要添加
                                 }
 
                                 // prop:
