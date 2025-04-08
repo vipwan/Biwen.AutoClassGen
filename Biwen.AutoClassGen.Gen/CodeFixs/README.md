@@ -8,7 +8,7 @@
 ### 配置方法
 
 1. 在项目目录下创建 `Biwen.AutoClassGen.Comment` 文件，定制注释模板
-2. 如果未创建配置文件，将使用默认模板:
+2. 如果未创建配置文件，将使用默认模板：
 ```csharp
 // Licensed to the {Product} under one or more agreements.
 // The {Product} licenses this file to you under the MIT license.
@@ -54,7 +54,18 @@
    - 同步修改接口定义（如果存在）
    - 更新所有实现类中的方法名
 
+### 忽略规则
+如果确实需要保持异步方法名不以Async结尾，可以使用特性来忽略规则：
+```csharp
+[IgnoreAsyncNaming]
+public async Task GetData() 
+{
+    // 方法实现
+}
+```
+
 ### 最佳实践
 1. 始终遵循异步方法命名约定
 2. 在重构之前确保所有相关代码都已保存
 3. 检查重命名后的代码确保没有遗漏
+4. 特殊情况下使用 `[IgnoreAsyncNaming]` 特性来抑制警告
