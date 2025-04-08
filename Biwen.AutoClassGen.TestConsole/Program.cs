@@ -3,6 +3,7 @@ using Biwen.AutoClassGen.TestConsole.Decors;
 using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 using Biwen.AutoClassGen.TestConsole.Services;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -46,9 +47,9 @@ Console.WriteLine(result2);
 
 
 // get auto inject svc
-var svcInject = scope.ServiceProvider.GetRequiredService<ITest2Service>();
-var result3 = svcInject.Say2("from auto inject");
-Console.WriteLine(result3);
+//var svcInject = scope.ServiceProvider.GetRequiredService<ITest2Service>();
+//var result3 = svcInject.Say2("from auto inject");
+//Console.WriteLine(result3);
 
 
 // get auto inject svc
@@ -147,10 +148,81 @@ var users = new List<User> { user, user3 };
 var list = users.AsQueryable().ProjectToUserDto().ToList();
 
 Console.WriteLine("project to dto:");
-foreach (var item in list)
+Console.WriteLine(JsonSerializer.Serialize(list, options: new JsonSerializerOptions
 {
-    Console.WriteLine($"I`m {nameof(UserDto)} {item.FirstName} {item.LastName} I`m {item.Age} years old");
-}
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+}));
 
+//comolex dto
+var person = new Person
+{
+    Address = new Address
+    {
+        City = "Shenzhen",
+        State = "Shenzhen",
+        Street = "No1 street",
+        ZipCode = "100000",
+    },
+    Age = 18,
+    Name = "万雅虎",
+    Igrone = "这不重要",
+    Igrone2 = "这也不重要",
+    Hobbies =
+    [
+        new Hobby
+        {
+            Name = "basketball",
+            Description = "I like basketball",
+            Extend = new HobbyExtend
+            {
+                Extend1 = "extend1",
+                Extend2 = "extend2",
+                Extend3 = new InnerExtend{
+                  InnerExtendMsg = "inner extend msg",
+                }
+            }
+        },
+        new Hobby
+        {
+            Name = "football",
+            Description = "I like football",
+            Extend =new HobbyExtend{
+                Extend1 = "extend11",
+                Extend2 = "extend21",
+            }
+        }
+    ],
+};
+
+var personDto = person.MapperToPersonDto();
+//当前因为没有实现多层嵌套，所以二级一下属性没有映射到DTO
+personDto.Hobbies[0].Extend.Extend1 = "extend1 ex5555555";
+personDto.Hobbies[0].Extend.Extend3.InnerExtendMsg = "hhhhhhhhh";
+
+Console.WriteLine($"I`m {personDto.Address.GetType().FullName} {personDto.Name} I`m {personDto.Age} years old");
+Console.WriteLine(JsonSerializer.Serialize(personDto, options: new JsonSerializerOptions
+{
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+}));
+
+
+// complex project to dto
+var personComplexDto = person.MapperToPersonComplexDto();
+//支持到多层嵌套,因此内部复杂对象的属性也会映射到DTO
+personComplexDto.Hobbies[0].Extend.Extend1 = "extend1 ex43432423";
+personComplexDto.Hobbies[0].Extend.Extend3.InnerExtendMsg = "hhhhhhhhh";
+
+
+Console.WriteLine($"I`m {personComplexDto.Address.GetType().FullName} {personComplexDto.Name} I`m {personComplexDto.Age} years old");
+Console.WriteLine(JsonSerializer.Serialize(personComplexDto, options: new JsonSerializerOptions
+{
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+}));
 
 Console.ReadLine();
