@@ -65,7 +65,8 @@ public class UserService : IUserService
 #### 4. 版本信息自动生成
 自动生成程序集版本信息，支持git版本号：
 ```csharp
-Console.WriteLine($"Version: {xxx.Version}");
+Console.WriteLine($"Version: {XXX.Generated.Version}");
+Console.WriteLine($"Version: {XXX.Generated.AssemblyMetadata}");
 ```
 
 ### 详细文档

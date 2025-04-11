@@ -1,4 +1,11 @@
-﻿using Biwen.AutoClassGen;
+﻿// Licensed to the Test Console App under one or more agreements.
+// The Test Console App licenses this file to you under the MIT license. 
+// See the LICENSE file in the project root for more information.13456789
+// This is a test console App
+// Test Console App Program.cs 
+// 2025-04-09 03:32:13  Biwen.AutoClassGen.TestConsole 万雅虎
+
+using Biwen.AutoClassGen;
 using Biwen.AutoClassGen.TestConsole.Decors;
 using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;

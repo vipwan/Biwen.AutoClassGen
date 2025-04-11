@@ -32,7 +32,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="AutoClassGenTest"/>
+		<InternalsVisibleTo Include="AutoClassGenTest" />
 	</ItemGroup>
 
 

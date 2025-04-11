@@ -1,6 +1,13 @@
-﻿using System.IO;
+﻿// <copyright file="SourceGenCodeFixProvider.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
+
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace Biwen.AutoClassGen;
 
@@ -14,127 +21,80 @@ public class VersionSourceGenerator : IIncrementalGenerator
 
     private readonly record struct VersionInfo(string? Namespace, string? File);
 
-    #region regex
-
-    private const RegexOptions ROptions = RegexOptions.Compiled | RegexOptions.Singleline;
-    private static readonly Regex VersionRegex = new(@"<Version>(.*?)</Version>", ROptions);
-    private static readonly Regex FileVersionRegex = new(@"<FileVersion>(.*?)</FileVersion>", ROptions);
-    private static readonly Regex AssemblyVersionRegex = new(@"<AssemblyVersion>(.*?)</AssemblyVersion>", ROptions);
-    private static readonly Regex ImportRegex = new(@"<Import Project=""(.*?)""", ROptions);
-
-    #endregion
-
-
     #region consts
 
-    private const string ODir = "build_property.projectdir";//项目目录
-    private const string ONamespace = "build_property.rootnamespace";//命名空间
-    private const string ProjExt = ".csproj";//项目文件扩展名
-    private const string VarPrefix = "$";//变量前缀
+    private const string ODir = "build_property.projectdir"; // 项目目录
+    private const string ONamespace = "build_property.rootnamespace"; // 命名空间
+    private const string ProjExt = ".csproj"; // 项目文件扩展名
+    private const string ConfigTag = "Biwen-AutoClassGen"; // 配置标签
 
     #endregion
-
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        //build_property.projectdir
-
-        //生成版本号
+        // 获取项目信息
         var inc = context.AnalyzerConfigOptionsProvider.Select((pvd, _) =>
         {
-            //取得项目目录
+            // 取得项目目录
             var flag = pvd.GlobalOptions.TryGetValue(ODir, out var root);
             if (!flag)
                 return new VersionInfo(null, null);
 
-            //取得命名空间
+            // 取得命名空间
             pvd.GlobalOptions.TryGetValue(ONamespace, out var @namespace);
 
-            //查找csproj文件
+            // 查找csproj文件
             var files = Directory.GetFiles(root, $"*{ProjExt}", SearchOption.TopDirectoryOnly);
 
             return new VersionInfo(@namespace, files.Length == 0 ? null : files[0]);
         });
 
-        //生成
+        // 生成
         context.RegisterSourceOutput(inc, (ctx, info) =>
         {
-            if (info.Namespace == null || info.File == null)
-                return;
-
-            string version = DefaultVersion;
-            string fileVersion = DefaultVersion;
-            string assemblyVersion = DefaultVersion;
-
-            // 获取不含扩展名的文件名
-            //var @namespace = Path.GetFileNameWithoutExtension(info.Item2);
-
-            // 读取文件
-            var text = File.ReadAllText(info.File);
-
-            //<Biwen-AutoClassGen>gv=false;ga=false;</Biwen-AutoClassGen>
-            //读取配置获取:Biwen-AutoClassGen.gv 如果等于false那么不生成:
-            var flagMatch = new Regex(@"<Biwen-AutoClassGen>(.*?)</Biwen-AutoClassGen>", RegexOptions.Singleline).Match(text);
-
-            if (flagMatch.Success)
+#pragma warning disable CA1031 // 不捕获常规异常类型
+            try
             {
-                var flag = flagMatch.Groups[1].Value;
-                if (flag?.ToLower(System.Globalization.CultureInfo.CurrentCulture).Contains("gv=false") is true)
+                // 创建临时诊断文件，用于排查问题
+                // string debugPath = Path.Combine(Path.GetTempPath(), "version_generator_debug.log");
+                // File.AppendAllText(debugPath, $"开始处理项目: {info.File ?? "无文件"}\n");
+
+                if (info.Namespace == null || info.File == null)
                     return;
-            }
 
-            // 载入Import的文件,例如 : <Import Project="..\Version.props" />
-            // 使用正则表达式匹配Project:
-            var importMatchs = ImportRegex.Matches(text);
+                // 默认版本号
+                string version = DefaultVersion;
+                string fileVersion = DefaultVersion;
+                string assemblyVersion = DefaultVersion;
 
-            foreach (Match importMatch in importMatchs)
-            {
-                var importFile = Path.Combine(Path.GetDirectoryName(info.File), importMatch.Groups[1].Value);
-                if (File.Exists(importFile))
+                // 读取项目文件内容
+                string projectContent = File.ReadAllText(info.File);
+
+                // 检查是否禁用版本生成
+                if (CheckConfigDisabled(projectContent))
+                    return;
+
+                // 创建属性字典和已处理文件集合
+                Dictionary<string, string> properties = [];
+                HashSet<string> processedFiles = new(StringComparer.OrdinalIgnoreCase)
                 {
-                    text += File.ReadAllText(importFile);
-                }
-            }
+                    // 递归处理项目文件及其所有嵌套引用
+                    info.File,
+                };
+                ProcessProjectFile(info.File, properties, processedFiles);
 
-            var match = VersionRegex.Match(text);
-            var fileVersionMatch = FileVersionRegex.Match(text);
-            var assemblyVersionMatch = AssemblyVersionRegex.Match(text);
+                // 提取版本信息
+                version = GetPropertyValue(properties, "Version", DefaultVersion);
+                fileVersion = GetPropertyValue(properties, "FileVersion", DefaultVersion);
+                assemblyVersion = GetPropertyValue(properties, "AssemblyVersion", DefaultVersion);
 
-            //存在变量引用的版本号,需要解析
-            string RawVersion(string version)
-            {
-                if (version == null)
-                    return DefaultVersion;
+                // 处理变量引用 $(VariableName)
+                version = ResolveVariableReferences(version, properties);
+                fileVersion = ResolveVariableReferences(fileVersion, properties);
+                assemblyVersion = ResolveVariableReferences(assemblyVersion, properties);
 
-                //当取得的版本号为变量引用:$(Version)的时候,需要再次解析
-                if (version.StartsWith(VarPrefix, System.StringComparison.Ordinal))
-                {
-                    var varName = version.Substring(2, version.Length - 3);
-                    var varMatch = new Regex($@"<{varName}>(.*?)</{varName}>", RegexOptions.Singleline).Match(text);
-                    if (varMatch.Success)
-                    {
-                        return varMatch.Groups[1].Value;
-                    }
-                    //未找到变量引用,返回默认版本号
-                    return DefaultVersion;
-                }
-                return version;
-            }
-
-            if (match.Success)
-            {
-                version = RawVersion(match.Groups[1].Value);
-            }
-            if (fileVersionMatch.Success)
-            {
-                fileVersion = RawVersion(fileVersionMatch.Groups[1].Value);
-            }
-            if (assemblyVersionMatch.Success)
-            {
-                assemblyVersion = RawVersion(assemblyVersionMatch.Groups[1].Value);
-            }
-
-            string source = $@"// <auto-generated/>
+                // 生成代码
+                string source = $@"// <auto-generated/>
 namespace {info.Namespace}.Generated;
 
 /// <summary>
@@ -159,8 +119,150 @@ public static class Version
     public static System.Version AssemblyVersion => System.Version.Parse(""{assemblyVersion}"");
 }}
 ";
-            // 输出代码
-            ctx.AddSource("version.g.cs", SourceText.From(source.FormatContent(), Encoding.UTF8));
+                //格式化
+                var sourceText = source.FormatContent();
+
+                // 输出代码
+                ctx.AddSource("version.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+
+                // File.AppendAllText(debugPath, $"成功生成代码，版本: {version}\n");
+            }
+            catch
+            {
+                // 记录异常信息，便于排查
+                // string debugPath = Path.Combine(Path.GetTempPath(), "version_generator_error.log");
+                // File.AppendAllText(debugPath, $"错误: {ex.Message}\n{ex.StackTrace}\n");
+            }
+#pragma warning restore CA1031 // 不捕获常规异常类型
         });
+    }
+
+    /// <summary>
+    /// 递归处理项目文件及其导入
+    /// </summary>
+    /// <param name="filePath">项目文件路径</param>
+    /// <param name="properties">收集的属性字典</param>
+    /// <param name="processedFiles">已处理的文件集合，用于防止循环引用</param>
+    private static void ProcessProjectFile(string filePath, Dictionary<string, string> properties, HashSet<string> processedFiles)
+    {
+#pragma warning disable CA1031 // 不捕获常规异常类型
+        try
+        {
+            // 解析项目文件
+            var projectXml = XDocument.Load(filePath);
+            XNamespace ns = projectXml.Root?.GetDefaultNamespace() ?? string.Empty;
+
+            // 收集当前文件中定义的属性
+            foreach (var propertyGroup in projectXml.Root?.Elements(ns + "PropertyGroup") ?? [])
+            {
+                foreach (var prop in propertyGroup.Elements())
+                {
+                    // 以最先定义的属性为准，后续导入的不覆盖已存在的属性
+                    // 这与 MSBuild 的加载顺序相反，可根据需要调整优先级
+                    if (!properties.ContainsKey(prop.Name.LocalName))
+                    {
+                        properties[prop.Name.LocalName] = prop.Value;
+                    }
+                }
+            }
+
+            // 处理所有导入项
+            foreach (var importElement in projectXml.Root?.Elements(ns + "Import") ?? [])
+            {
+                var importPath = importElement.Attribute("Project")?.Value;
+                if (string.IsNullOrEmpty(importPath))
+                    continue;
+
+                // 计算完整路径
+                string fullImportPath;
+                if (Path.IsPathRooted(importPath))
+                {
+                    fullImportPath = importPath!;
+                }
+                else
+                {
+                    var baseDir = Path.GetDirectoryName(filePath) ?? string.Empty;
+                    fullImportPath = Path.GetFullPath(Path.Combine(baseDir, importPath));
+                }
+
+                // 检查文件是否存在且未处理过（防止循环引用）
+                if (File.Exists(fullImportPath) && !processedFiles.Contains(fullImportPath))
+                {
+                    // 标记为已处理
+                    processedFiles.Add(fullImportPath);
+
+                    // 递归处理导入文件
+                    ProcessProjectFile(fullImportPath, properties, processedFiles);
+                }
+            }
+        }
+        catch
+        {
+            // 忽略处理项目文件时的异常
+        }
+#pragma warning restore CA1031 // 不捕获常规异常类型
+    }
+
+    /// <summary>
+    /// 检查是否禁用了版本生成
+    /// </summary>
+    private static bool CheckConfigDisabled(string projectContent)
+    {
+        var match = Regex.Match(projectContent, $@"<{ConfigTag}>(.*?)</{ConfigTag}>", RegexOptions.Singleline);
+        if (match.Success)
+        {
+            var config = match.Groups[1].Value;
+            return config.ToLower(System.Globalization.CultureInfo.CurrentCulture).Contains("gv=false");
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 从属性字典中获取属性值
+    /// </summary>
+    private static string GetPropertyValue(Dictionary<string, string> properties, string propertyName, string defaultValue)
+    {
+        if (properties.TryGetValue(propertyName, out var value) && !string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// 解析属性中的变量引用，例如 $(VariableName)
+    /// </summary>
+    private static string ResolveVariableReferences(string value, Dictionary<string, string> properties)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        // 查找 $(VarName) 形式的变量引用
+        var variableRegex = new Regex(@"\$\(([^)]+)\)");
+        var match = variableRegex.Match(value);
+        int maxIterations = 10; // 防止无限循环
+        int currentIteration = 0;
+
+        while (match.Success && currentIteration < maxIterations)
+        {
+            currentIteration++;
+            var varName = match.Groups[1].Value;
+            if (properties.TryGetValue(varName, out var varValue))
+            {
+                // 替换变量引用
+                value = value.Replace($"$({varName})", varValue);
+
+                // 继续查找更多变量引用
+                match = variableRegex.Match(value);
+            }
+            else
+            {
+                // 变量未找到，跳过此变量
+                value = value.Replace($"$({varName})", string.Empty);
+                match = match.NextMatch();
+            }
+        }
+
+        return value;
     }
 }

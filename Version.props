@@ -1,10 +1,13 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<PropertyGroup>
-		<PackageVersion>2.0.0-preview4</PackageVersion>
+		<V3Inner>1.7.1.0</V3Inner>
+		<V2Inner>$(V3Inner)</V2Inner>
+		<V2>$(V2Inner)</V2>
+		<PackageVersion>1.7.1-beta1</PackageVersion>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
-		<FileVersion>2.0.2</FileVersion>
-		<Version>2.0.1</Version>
+		<FileVersion>1.7.0</FileVersion>
+		<Version>$(V2)</Version>
 		<Product>Test Console App</Product>
 	</PropertyGroup>
 </Project>
