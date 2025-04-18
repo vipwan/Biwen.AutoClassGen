@@ -16,6 +16,7 @@ Biwen.AutoClassGen 是一个代码生成工具库，通过源代码生成器（S
 - **版本信息生成**：自动生成程序集版本信息
 - **元数据生成**：自动生成程序集元数据
 - **代码分析与修复**：提供多种代码分析规则和自动修复功能
+- **枚举描述生成**：根据枚举值自动生成描述信息(`Description`,`Display`)，方便在UI中显示
 
 [中文文档](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
 
@@ -69,6 +70,25 @@ Console.WriteLine($"Version: {XXX.Generated.Version}");
 Console.WriteLine($"Version: {XXX.Generated.AssemblyMetadata}");
 ```
 
+#### 5. 枚举描述自动生成
+```csharp
+[AutoDescription]
+public enum UserStatus
+{
+    [Description("正常")]
+    Normal,
+    [Description("禁用")]
+    Disabled,
+    [Display(Name = "已删除")]
+    Deleted
+}
+// 生成的描述信息
+Console.WriteLine(UserStatus.Normal.Description()); // 输出: 正常
+Console.WriteLine(UserStatus.Deleted.Description()); // 输出: 已删除
+
+```
+
+
 ### 详细文档
 
 以下是每个功能的详细使用说明：
@@ -79,6 +99,7 @@ Console.WriteLine($"Version: {XXX.Generated.AssemblyMetadata}");
 - [依赖注入自动注册文档](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-AutoInject.md)
 - [版本信息生成器文档](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Version.md)
 - [程序集元数据生成器文档](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/Gen-Metadata.md)
+- [枚举描述生成生成器文档](https://github.com/vipwan/Biwen.AutoClassGen/issues/11)
 
 - [更多文档...](https://github.com/vipwan/Biwen.AutoClassGen/issues?q=is%3Aissue%20state%3Aopen%20label%3Adocumentation)
 

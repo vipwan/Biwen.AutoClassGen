@@ -37,7 +37,7 @@ namespace Biwen.AutoClassGen.TestConsole
         Gray,
         [Description("Black Color")]
         Black,
-        [Display(Name = "White Color")] //tostring()
+        [Display(Name = "White Color")] //eq Description
         White,
         LightBlue, //tostring()
 
