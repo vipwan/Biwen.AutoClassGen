@@ -232,4 +232,14 @@ Console.WriteLine(JsonSerializer.Serialize(personComplexDto, options: new JsonSe
     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
 }));
 
+
+
+
+//提供对AutoDescriptionAttribute的支持
+var colorEnum = Biwen.AutoClassGen.TestConsole.ColorEnum.Red;
+var colorEnum2 = Biwen.AutoClassGen.TestConsole.ColorEnum.LightBlue;
+
+Console.WriteLine($"From Description: {colorEnum.Description()}, Default: {colorEnum2.Description()}");
+
+
 Console.ReadLine();

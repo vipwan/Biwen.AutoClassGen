@@ -8,7 +8,7 @@
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<AnalysisLevel>6.0-all</AnalysisLevel>
 		<Authors>万雅虎</Authors>
-		<PackageVersion>1.7.0</PackageVersion>
+		<PackageVersion>1.8.0</PackageVersion>
 		<Version>$(PackageVersion)</Version>
 		<FileVersion>$(PackageVersion)</FileVersion>
 	</PropertyGroup>
