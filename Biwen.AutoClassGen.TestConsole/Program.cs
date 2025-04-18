@@ -9,6 +9,7 @@ using Biwen.AutoClassGen;
 using Biwen.AutoClassGen.TestConsole.Decors;
 using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
+using Biwen.AutoClassGen.TestConsole.ForBiwenQuickApi;
 using Biwen.AutoClassGen.TestConsole.Services;
 using System.Text.Json;
 
@@ -231,6 +232,10 @@ Console.WriteLine(JsonSerializer.Serialize(personComplexDto, options: new JsonSe
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
 }));
+
+
+//支持的写法
+var testType = typeof(OptionsFieldType<int>);
 
 
 

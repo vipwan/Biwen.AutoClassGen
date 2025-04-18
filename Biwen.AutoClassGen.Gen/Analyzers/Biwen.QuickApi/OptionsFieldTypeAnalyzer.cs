@@ -16,9 +16,9 @@ namespace Biwen.AutoClassGen.Analyzers.BiwenQuickApi
         public const string DiagnosticId = "BWN001";
 
         // 诊断信息
-        private static readonly LocalizableString Title = "泛型参数必须是枚举类型";
-        private static readonly LocalizableString MessageFormat = "类型 '{0}' 的泛型参数 T 必须是枚举类型";
-        private static readonly LocalizableString Description = "OptionsFieldType<T> 和 OptionsMultiFieldType<T> 的泛型参数 T 必须是枚举类型。.";
+        private static readonly LocalizableString Title = "泛型参数必须是枚举类型或整型";
+        private static readonly LocalizableString MessageFormat = "类型 '{0}' 的泛型参数 T 必须是枚举类型或整型";
+        private static readonly LocalizableString Description = "OptionsFieldType<T> 和 OptionsMultiFieldType<T> 的泛型参数 T 必须是枚举类型或整型。.";
         private const string Category = "Usage";
 
         // 需要验证的类型
@@ -61,10 +61,23 @@ namespace Biwen.AutoClassGen.Analyzers.BiwenQuickApi
                 return;
 
             var typeArgument = genericNameSyntax.TypeArgumentList.Arguments[0];
+
+            // 如果是开放泛型（如 OptionsFieldType<>），则不进行检查
+            if (typeArgument is OmittedTypeArgumentSyntax)
+                return;
+
             var typeSymbol = context.SemanticModel.GetTypeInfo(typeArgument).Type;
 
-            // 验证类型参数是否为枚举
-            if (typeSymbol == null || typeSymbol.TypeKind != TypeKind.Enum)
+            // 检查是否为空
+            if (typeSymbol == null)
+                return;
+
+            // 验证类型参数是否为枚举或整型
+            bool isValidType =
+                typeSymbol.TypeKind == TypeKind.Enum ||
+                IsIntegerType(typeSymbol);
+
+            if (!isValidType)
             {
                 // 报告诊断
                 var diagnostic = Diagnostic.Create(
@@ -74,6 +87,17 @@ namespace Biwen.AutoClassGen.Analyzers.BiwenQuickApi
 
                 context.ReportDiagnostic(diagnostic);
             }
+        }
+
+        // 检查是否为整型
+        private static bool IsIntegerType(ITypeSymbol typeSymbol)
+        {
+            if (typeSymbol.SpecialType == SpecialType.System_Int32)
+                return true;
+
+            // 如果需要支持其他整数类型（如 long, short 等），可以在此添加
+
+            return false;
         }
     }
 }
