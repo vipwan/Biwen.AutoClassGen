@@ -1,7 +1,4 @@
-﻿// <copyright file="AutoDecorSourceGenerator.cs" company="vipwan">
-//MIT Copyright (c) vipwan. All rights reserved.
-// </copyright>
-// <copyright file="AutoDescriptionSourceGenerator.cs" company="vipwan">
+﻿// <copyright file="AutoDescriptionSourceGenerator.cs" company="vipwan">
 //MIT Copyright (c) vipwan. All rights reserved.
 // </copyright>
 
