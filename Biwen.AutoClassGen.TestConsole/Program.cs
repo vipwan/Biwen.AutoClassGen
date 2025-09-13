@@ -11,6 +11,7 @@ using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 using Biwen.AutoClassGen.TestConsole.ForBiwenQuickApi;
 using Biwen.AutoClassGen.TestConsole.Services;
+using Biwen.AutoClassGen.TestLib;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder();
@@ -232,6 +233,21 @@ Console.WriteLine(JsonSerializer.Serialize(personComplexDto, options: new JsonSe
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
 }));
+
+
+// 提供对外部库DTO转换的支持
+var testClass1 = new TestClass1
+{
+    Id = 1,
+    Description = "this is a test",
+    Title = "hello world",
+    Sort = "A",
+};
+
+var libDto = testClass1.MapperToLibDto();
+
+Console.WriteLine($"I`m {libDto.GetType().FullName} {libDto.Title} {libDto.Description}");
+
 
 
 //支持的写法

@@ -11,8 +11,8 @@ using Biwen.AutoClassGen.TestLib;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-//非同一代码库下,不会生成
-[AutoDto<TestClass1>] //warning
+//当前已支持夸库DTO生成 20250903
+[AutoDto<TestClass1>] //no warning
 public partial class LibDto
 {
 }

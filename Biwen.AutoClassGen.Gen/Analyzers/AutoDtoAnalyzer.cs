@@ -16,9 +16,9 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     public const string DiagnosticIdGEN041 = "GEN041";
     public const string DiagnosticIdGEN042 = "GEN042";
 
-    private static readonly LocalizableString Title = "不可使用外部库生成DTO";
-    private static readonly LocalizableString MessageFormat = "不可使用外部库生成DTO";
-    private static readonly LocalizableString Description = "不可使用外部库生成DTO.";
+    private static readonly LocalizableString Title = "无法解析目标类型";
+    private static readonly LocalizableString MessageFormat = "无法解析目标类型，请确保引用了正确的程序集并且类型可访问";
+    private static readonly LocalizableString Description = "无法解析目标类型，可能是因为缺少程序集引用或类型不可访问.";
 
     private static readonly LocalizableString Title2 = "标注的类必须是partial类";
     private static readonly LocalizableString MessageFormat2 = "标注的类必须是partial类";
@@ -115,17 +115,13 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
         // 遍历每个 AutoDto 特性，提取并验证实体类型
         foreach (var attribute in autoDtoAttributes)
         {
-            string? entityName = null;
+            TypeSyntax? targetTypeSyntax = null;
 
             // 处理泛型特性和非泛型特性
             if (attribute.Name is GenericNameSyntax genericName)
             {
                 // 泛型特性: [AutoDto<EntityType>]
-                var typeArg = genericName.TypeArgumentList.Arguments.FirstOrDefault();
-                if (typeArg != null)
-                {
-                    entityName = GetSimpleTypeName(typeArg);
-                }
+                targetTypeSyntax = genericName.TypeArgumentList.Arguments.FirstOrDefault();
             }
             else
             {
@@ -136,21 +132,31 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
                     var expression = argument.Expression;
                     if (expression is TypeOfExpressionSyntax typeOfExpr)
                     {
-                        entityName = GetSimpleTypeName(typeOfExpr.Type);
+                        targetTypeSyntax = typeOfExpr.Type;
                     }
                 }
             }
 
-            // 如果成功提取了实体名称，验证它是否存在于当前编译中
-            if (!string.IsNullOrEmpty(entityName))
+            // 如果成功提取了目标类型语法，使用语义模型验证类型
+            if (targetTypeSyntax != null)
             {
-                var symbols = context.SemanticModel.Compilation.GetSymbolsWithName(entityName!, SymbolFilter.Type);
-                var symbol = symbols.Cast<ITypeSymbol>().FirstOrDefault();
+                var typeInfo = context.SemanticModel.GetTypeInfo(targetTypeSyntax);
+                var targetTypeSymbol = typeInfo.Type;
 
-                if (symbol is null)
+                if (targetTypeSymbol == null || targetTypeSymbol.TypeKind == TypeKind.Error)
                 {
-                    // 如果没有找到对应的类，报错
+                    // 如果无法解析类型，报告诊断信息
                     context.ReportDiagnostic(Diagnostic.Create(RuleGEN044, attribute.GetLocation()));
+                }
+                else
+                {
+                    // 可选：检查类型的可访问性
+                    if (targetTypeSymbol.DeclaredAccessibility != Accessibility.Public &&
+                        targetTypeSymbol.DeclaredAccessibility != Accessibility.Internal)
+                    {
+                        // 如果类型不是公共或内部的，可能无法访问
+                        context.ReportDiagnostic(Diagnostic.Create(RuleGEN044, attribute.GetLocation()));
+                    }
                 }
             }
         }

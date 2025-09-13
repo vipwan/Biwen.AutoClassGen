@@ -116,7 +116,7 @@ Console.WriteLine(UserStatus.Deleted.Description()); // 输出: 已删除
 #### DTO生成器规则
 - `GEN041` : 检测重复的 `[AutoDto]` 特性标注
 - `GEN042` : 禁止在抽象类上使用 `[AutoDto]` 特性
-- `GEN044` : 防止 `[AutoDto]` 引用外部程序集的类
+- `GEN044` : `[AutoDto]` 无法解析目标类型，请确保引用了正确的程序集并且类型可访问
 - `GEN045` : 确保标记 `[AutoDto]` 的类声明为 partial
 
 #### 装饰器相关规则
