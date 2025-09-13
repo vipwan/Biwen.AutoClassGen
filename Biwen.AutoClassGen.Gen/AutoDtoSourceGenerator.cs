@@ -205,7 +205,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                     var typeArg = genericName.TypeArgumentList.Arguments[0];
                     var typeInfo = semanticModel.GetTypeInfo(typeArg);
                     var typeSymbol = typeInfo.Type;
-                    
+
                     if (typeSymbol != null && typeSymbol.TypeKind != TypeKind.Error)
                     {
                         return new EntityInfo(typeSymbol.Name, typeSymbol);
@@ -224,7 +224,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 {
                     var typeInfo = semanticModel.GetTypeInfo(typeOfExpr.Type);
                     var typeSymbol = typeInfo.Type;
-                    
+
                     if (typeSymbol != null && typeSymbol.TypeKind != TypeKind.Error)
                     {
                         return new EntityInfo(typeSymbol.Name, typeSymbol);
@@ -405,7 +405,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
             var typeInCurrentCompilation = compilation.GetSymbolsWithName(typeName, SymbolFilter.Type)
                                                      .OfType<INamedTypeSymbol>()
                                                      .Any(s => s.Equals(type, SymbolEqualityComparer.Default));
-            
+
             if (typeInCurrentCompilation)
             {
                 dtoTypeName = possibleDtoName;
@@ -510,6 +510,10 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
     private static void GenSource(Compilation compilation, SourceProductionContext context, IEnumerable<AutoDtoMetadata> metadatas)
     {
         if (!metadatas.Any()) return;
+
+        // 新增: 检测是否支持可空引用类型 (C# 8 +)
+        var parseOptions = compilation.SyntaxTrees.Select(t => t.Options).OfType<CSharpParseOptions>().FirstOrDefault();
+        bool supportsNullable = parseOptions != null && parseOptions.LanguageVersion >= LanguageVersion.CSharp8;
 
         // 记录需要生成的嵌套DTO类型
         Dictionary<string, AutoDtoMetadata> nestedDtoTypesToGenerate = new();
@@ -687,6 +691,10 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
                                 // 处理属性类型，检查是否需要使用DTO类型替换
                                 string propTypeName = prop.Type.ToDisplayString();
+                                if (!supportsNullable)
+                                {
+                                    propTypeName = RemoveReferenceTypeNullabilityAnnotations(propTypeName);
+                                }
                                 string mapperCode = $"{prop.Name} = model.{prop.Name},";
                                 string reverseMapperCode = $"{prop.Name} = model.{prop.Name},";
 
@@ -722,6 +730,10 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                                             Regex.Escape(typeToCheck.ToDisplayString()),
                                                             dtoSymbol?.ToDisplayString() ?? dtoTypeName);
                                                     }
+                                                    if (!supportsNullable)
+                                                    {
+                                                        propTypeName = RemoveReferenceTypeNullabilityAnnotations(propTypeName);
+                                                    }
 
                                                     // 生成集合映射代码
                                                     mapperCode = $"{prop.Name} = model.{prop.Name} != null " +
@@ -739,6 +751,10 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                                                 {
                                                     // 单一对象类型，直接替换
                                                     propTypeName = dtoSymbol?.ToDisplayString() ?? dtoTypeName;
+                                                    if (!supportsNullable)
+                                                    {
+                                                        propTypeName = RemoveReferenceTypeNullabilityAnnotations(propTypeName);
+                                                    }
 
                                                     // 生成对象映射代码
                                                     mapperCode = $"{prop.Name} = model.{prop.Name}?.MapperTo{dtoTypeName}(),";
@@ -1025,37 +1041,79 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
     private record AutoDtoMetadata(string FromClass, string ToClass, HashSet<string> Escapes)
     {
         public string? RootNamespace { get; set; }
-
         /// <summary>
-        /// 是否记录类型
+        /// 是否为 record class
         /// </summary>
         public bool IsRecord { get; set; }
-
         /// <summary>
-        /// 是否是复杂DTO
+        /// 是否为复杂DTO,复杂DTO会递归处理属性的复杂类型,默认:false
         /// </summary>
-        public bool IsComplex { get; set; } // 默认不是复杂DTO，除非明确标记
-
+        public bool IsComplex { get; set; }
         /// <summary>
-        /// 最大嵌套层级
+        /// 如果为复杂DTO,则递归处理的最大嵌套层级,默认:2
         /// </summary>
-        public int MaxNestingLevel { get; set; } = 2; // 默认只支持2层嵌套
-
+        public int MaxNestingLevel { get; set; } = 2;
         /// <summary>
-        /// 实体类型符号，用于跨库类型访问
+        /// 原始类型的符号引用,用于避免重复查找
         /// </summary>
         public ITypeSymbol? EntityTypeSymbol { get; set; }
     }
 
-    #region Template
+    /// <summary>
+    /// 新增: 低于C#8时移除引用类型的可空注解(保留值类型可空)
+    /// </summary>
+    /// <param name="typeDisplay"></param>
+    /// <returns></returns>
+    private static string RemoveReferenceTypeNullabilityAnnotations(string typeDisplay)
+    {
+        if (string.IsNullOrEmpty(typeDisplay)) return typeDisplay;
+        var sb = new StringBuilder(typeDisplay.Length);
+        for (int i = 0; i < typeDisplay.Length; i++)
+        {
+            char c = typeDisplay[i];
+            if (c == '?')
+            {
+                int j = i - 1;
+                while (j >= 0 && (char.IsLetterOrDigit(typeDisplay[j]) || typeDisplay[j] == '.'))
+                {
+                    j--;
+                }
+                var token = typeDisplay.Substring(j + 1, i - j - 1);
+                var shortName = token.Split('.').Last();
+                if (IsNullableValueTypeName(shortName))
+                {
+                    sb.Append('?'); // 保留值类型的可空
+                }
+                // 引用类型直接丢弃 '?'
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
+    }
 
-    private const string MapperTemplate = $@"
+    /// <summary>
+    /// 兼容小于C#8的低版本可空值类型名称判断
+    /// </summary>
+    /// <param name="shortName"></param>
+    /// <returns></returns>
+    private static bool IsNullableValueTypeName(string shortName) => shortName switch
+    {
+        "bool" or "byte" or "sbyte" or "short" or "ushort" or "int" or "uint" or "long" or "ulong" or
+        "float" or "double" or "decimal" or "char" or "DateTime" or "DateTimeOffset" or "Guid" => true,
+        _ => false,
+    };
+
+    #region Template
+    private const string MapperTemplate = @"
 namespace $namespace
-{{
+{
     using System.Linq;
     using $ns;
     public static partial class $baseclassTo$dtoclassExtentions
-    {{
+    {
         /// <summary>
         /// custom mapper
         /// </summary>
@@ -1065,29 +1123,29 @@ namespace $namespace
         /// </summary>
         /// <returns></returns>
         public static $dtoclass MapperTo$dtoclass(this $baseclass model)
-        {{
+        {
             if (model == null) return null;
             
             var retn = new $dtoclass()
-            {{
+            {
                 $body
-            }};
+            };
             MapperToPartial(model, retn);
             return retn;
-        }}
+        }
 
         /// <summary>
         /// ProjectTo $dtoclass
         /// </summary>
         public static IQueryable<$dtoclass> ProjectTo$dtoclass(this IQueryable<$baseclass> query)
-        {{
+        {
             return query.Select(model => model.MapperTo$dtoclass());
-        }}
+        }
         
-    }}
+    }
 
     public static partial class $dtoclassTo$baseclassExtentions
-    {{
+    {
         /// <summary>
         /// custom mapper
         /// </summary>
@@ -1097,19 +1155,18 @@ namespace $namespace
         /// </summary>
         /// <returns></returns>
         public static $baseclass MapperTo$baseclass(this $dtoclass model)
-        {{
+        {
             if (model == null) return null;
             
             var retn = new $baseclass()
-            {{
+            {
                 $2body
-            }};
+            };
             MapperToPartial(model, retn);
             return retn;
-        }}
-    }}
-}}
+        }
+    }
+}
 ";
-
     #endregion
 }
