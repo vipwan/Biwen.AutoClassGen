@@ -46,6 +46,24 @@
         }
     }
 
+    [AutoInjectKeyed("test5", typeof(ITest2Service), ServiceLifetime.Scoped)]
+    public class TestService5 : ITest2Service
+    {
+        public string Say2(string message)
+        {
+            return message;
+        }
+    }
+
+    [AutoInjectKeyed("test6", typeof(ITest2Service), ServiceLifetime.Transient)]
+    public class TestService6 : ITest2Service
+    {
+        public string Say2(string message)
+        {
+            return message;
+        }
+    }
+
 
     public partial class TestServiceDto
     {

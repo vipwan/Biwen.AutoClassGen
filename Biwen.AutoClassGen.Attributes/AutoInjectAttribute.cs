@@ -24,16 +24,31 @@ public class AutoInjectAttribute(Type baseType = null, ServiceLifetime serviceLi
 }
 
 
+/// <summary>
+/// AutoInjectKeyed
+/// </summary>
+/// <param name="key">服务Key，不能为空</param>
+/// <param name="baseType">NULL表示服务自身</param>
+/// <param name="serviceLifetime">服务生命周期</param>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public class AutoInjectKeyedAttribute(string key, Type baseType = null, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped) : Attribute
+{
+    public ServiceLifetime ServiceLifetime { get; set; } = serviceLifetime;
+
+    public Type BaseType { get; set; } = baseType;
+
+    public string Key { get; set; } = key ?? throw new ArgumentNullException(nameof(key));
+
+}
+
+
+
 #if NET7_0_OR_GREATER
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 public class AutoInjectAttribute<T>(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped) : AutoInjectAttribute(typeof(T), serviceLifetime)
 {
 }
-
-#endif
-
-#if NET8_0_OR_GREATER
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 public class AutoInjectKeyedAttribute<T>(string key, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped) : AutoInjectAttribute(typeof(T), serviceLifetime)
