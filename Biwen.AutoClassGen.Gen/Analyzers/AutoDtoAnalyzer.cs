@@ -29,8 +29,8 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString Description3 = "不可标注到abstract类.";
 
     private static readonly LocalizableString TitleGEN041GEN041 = "重复标注[AutoDto]";
-    private static readonly LocalizableString MessageFormatGEN041 = "重复标注了[AutoDto],请删除多余的标注";
-    private static readonly LocalizableString DescriptionGEN041 = "重复标注[AutoDto].";
+    private static readonly LocalizableString MessageFormatGEN041 = "重复标注了[AutoDto],请删除多余的标注, 实际上 AutoDto可以和AutoDtoComplex并存, 请修改对应分析器的错误";
+    private static readonly LocalizableString DescriptionGEN041 = "重复标注[AutoDto]. AutoDto 可以和 AutoDtoComplex 并存, 但不能有多个相同的 AutoDto 或 AutoDtoComplex 特性.";
 
 
 
@@ -88,8 +88,30 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
         if (autoDtoAttributes.Count == 0)
             return;
 
-        // 检查是否重复标注 [AutoDto]
-        if (autoDtoAttributes.Count > 1)
+        // 分别检查 AutoDto 和 AutoDtoComplex 特性
+        var autoDtoOnlyAttributes = autoDtoAttributes
+            .Where(x => 
+            {
+                var attrName = x.Name.ToString();
+                return attrName == "AutoDto" || 
+                       (x.Name is GenericNameSyntax && attrName.StartsWith("AutoDto<", StringComparison.Ordinal));
+            })
+            .ToList();
+
+        var autoDtoComplexAttributes = autoDtoAttributes
+            .Where(x => x.Name.ToString() == "AutoDtoComplex")
+            .ToList();
+
+        // 检查是否有多个 AutoDto 特性（不包括 AutoDtoComplex）
+        if (autoDtoOnlyAttributes.Count > 1)
+        {
+            var location = Location.Create(classDeclaration.SyntaxTree,
+                TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
+            context.ReportDiagnostic(Diagnostic.Create(RuleGEN041, location));
+        }
+
+        // 检查是否有多个 AutoDtoComplex 特性
+        if (autoDtoComplexAttributes.Count > 1)
         {
             var location = Location.Create(classDeclaration.SyntaxTree,
                 TextSpan.FromBounds(classDeclaration.Modifiers.FullSpan.Start, classDeclaration.Identifier.Span.End));
@@ -113,7 +135,7 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
         }
 
         // 遍历每个 AutoDto 特性，提取并验证实体类型
-        foreach (var attribute in autoDtoAttributes)
+        foreach (var attribute in autoDtoOnlyAttributes)
         {
             TypeSyntax? targetTypeSyntax = null;
 

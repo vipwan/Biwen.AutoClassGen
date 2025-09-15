@@ -12,7 +12,8 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 //当前已支持夸库DTO生成 20250903
-[AutoDto<TestClass1>] //no warning
+[AutoDto<TestClass1>("hello")] //no warning
+[AutoDtoComplex]
 public partial class LibDto
 {
 }
