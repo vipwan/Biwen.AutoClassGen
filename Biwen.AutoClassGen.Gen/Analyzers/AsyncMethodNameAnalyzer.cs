@@ -129,6 +129,8 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
                 attr == "HttpGet" || attr == "HttpPost" || attr == "HttpPut" || attr == "HttpDelete" ||
                 attr == "Route" || attr == "ApiExplorerSettings" ||
                 attr == "IgnoreAsyncNaming" || // 自定义特性
+                attr == "TestMethod" || // MSTest
+                attr == "Test" || // NUnit/xUnit 兼容性考虑
                 attr.StartsWith("GraphQL",StringComparison.Ordinal) ||
                 attr.EndsWith("Operation",StringComparison.Ordinal) ||
                 attr.Contains("Subscription") ||
@@ -278,7 +280,7 @@ public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
                 }
             }
         }
-        else if (returnType is GenericNameSyntax genericName && (genericName.Identifier.Text == "Task" || genericName.Identifier.Text == "ValueTask"))
+        else if (returnType is GenericNameSyntax genericName2 && (genericName2.Identifier.Text == "Task" || genericName2.Identifier.Text == "ValueTask"))
         {
             if (!methodDeclaration.Identifier.Text.EndsWith(AsyncSuffix, StringComparison.OrdinalIgnoreCase))
             {
