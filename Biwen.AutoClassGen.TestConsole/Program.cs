@@ -234,6 +234,13 @@ Console.WriteLine(JsonSerializer.Serialize(personComplexDto, options: new JsonSe
     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
 }));
 
+//AutoDtoWithMapper Attribute
+var userMyMapperDto = user.MapperToUserMyMapperDto();
+var userFromMyMapperDto = userMyMapperDto.MapperToUser();
+Console.WriteLine($"I`m {nameof(userMyMapperDto)} {userMyMapperDto.FirstName} {userMyMapperDto.LastName} I`m {userMyMapperDto.Age} years old");
+Console.WriteLine($"I`m {nameof(userFromMyMapperDto)} {userFromMyMapperDto.FirstName} {userFromMyMapperDto.LastName} I`m {userFromMyMapperDto.Age} years old");
+
+
 
 // 提供对外部库DTO转换的支持
 var testClass1 = new TestClass1

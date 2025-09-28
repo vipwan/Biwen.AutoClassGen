@@ -68,6 +68,26 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
     {
         public IList<VenueImageDto>? Images { get; set; }
     }
+
+
+
+
+    public class MyStaticMapper : IStaticAutoDtoMapper<User, UserMyMapperDto>
+    {
+        public static void Map(User from, UserMyMapperDto to)
+        {
+            to.FirstName = from.FirstName + " - mapped by MyStaticMapper";
+        }
+    }
+
+    [AutoDtoWithMapper<User>(typeof(MyStaticMapper), nameof(User.Id), "TestCol")]
+    public partial class UserMyMapperDto;
+
+
+    [AutoDtoWithMapper<User>(typeof(MyStaticMapper), nameof(User.Id), "TestCol")]
+    public partial class UserMyMapperErrorDto; //当前类没有实现IStaticAutoDtoMapper接口会报错
+
+
 }
 
 

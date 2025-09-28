@@ -30,6 +30,11 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
     private const string GenericAutoDtoAttributeName = "Biwen.AutoClassGen.Attributes.AutoDtoAttribute`1";
 
     /// <summary>
+    /// 带静态Mapper的泛型AutoDtoWithMapperAttribute
+    /// </summary>
+    private const string GenericAutoDtoWithMapperAttributeName = "Biwen.AutoClassGen.Attributes.AutoDtoWithMapperAttribute`1";
+
+    /// <summary>
     /// 复杂对象DTO特性
     /// </summary>
     private const string AutoDtoComplexAttributeName = "Biwen.AutoClassGen.Attributes.AutoDtoComplexAttribute";
@@ -59,6 +64,16 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                 !typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword)),
             (syntaxContext, _) => syntaxContext).Collect();
 
+        // 新增: AutoDtoWithMapperAttribute<T>
+        var nodesDtoWithMapperG = context.SyntaxProvider.ForAttributeWithMetadataName(
+            GenericAutoDtoWithMapperAttributeName,
+            // 添加相同的初步过滤条件
+            (syntaxNode, _) =>
+                syntaxNode is TypeDeclarationSyntax typeDecl &&
+                typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)) &&
+                !typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword)),
+            (syntaxContext, _) => syntaxContext).Collect();
+
         #endregion
 
         #region AutoDtoComplexAttribute
@@ -78,35 +93,39 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
         #endregion
 
-        var join = nodesDto.Combine(nodesDtoG);
-        var joinWithComplex = join.Combine(nodesComplex);
+        // 组合
+        var join = nodesDto.Combine(nodesDtoG); // (dto, genericDto)
+        var join2 = join.Combine(nodesDtoWithMapperG); // ((dto, genericDto), genericWithMapper)
+        var joinWithComplex = join2.Combine(nodesComplex); // (((dto, genericDto), genericWithMapper), complex)
         var comp = context.CompilationProvider.Combine(joinWithComplex);
 
         // RegisterSourceOutput
         context.RegisterSourceOutput(comp,
             (ctx, nodes) =>
             {
-                var meta1 = GetMeta(nodes.Right.Left.Left, nodes.Left, false);
-                var meta2 = GetMeta(nodes.Right.Left.Right, nodes.Left, true);
+                // 解构
+                var compilation = nodes.Left;
+                var dtoNodes = nodes.Right.Left.Left.Left;      // nodesDto
+                var genericDtoNodes = nodes.Right.Left.Left.Right; // nodesDtoG
+                var genericDtoWithMapperNodes = nodes.Right.Left.Right; // nodesDtoWithMapperG
+                var complexNodes = nodes.Right.Right; // nodesComplex
 
-                // 处理复杂DTO标记 - 修改处理方式，避免使用dynamic
-                List<AutoDtoMetadata> metadataList = [.. meta1, .. meta2];
+                var meta1 = GetMeta(dtoNodes, compilation, isGeneric: false, isGenericWithMapper: false);
+                var meta2 = GetMeta(genericDtoNodes, compilation, isGeneric: true, isGenericWithMapper: false);
+                var meta3 = GetMeta(genericDtoWithMapperNodes, compilation, isGeneric: true, isGenericWithMapper: true);
 
-                // 直接在这里处理复杂DTO特性，使用强类型
-                foreach (var complexNode in nodes.Right.Right)
+                List<AutoDtoMetadata> metadataList = [.. meta1, .. meta2, .. meta3];
+
+                // 复杂DTO标记
+                foreach (var complexNode in complexNodes)
                 {
                     var typeDecl = complexNode.Node;
                     var className = typeDecl.Identifier.ValueText;
-
-                    // 找到对应的元数据
                     var metadata = metadataList.FirstOrDefault(m => m.ToClass == className);
                     if (metadata != null)
                     {
                         metadata.IsComplex = true;
-
-                        int maxLevel = 2; // 默认,只支持到第二层
-
-                        // 尝试获取嵌套深度参数
+                        int maxLevel = 2;
                         var attributeData = complexNode.AttributeData;
                         if (attributeData.ConstructorArguments.Length > 0 &&
                             attributeData.ConstructorArguments[0].Value is int maxLevelValue)
@@ -117,7 +136,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                     }
                 }
 
-                GenSource(nodes.Left, ctx, metadataList);
+                GenSource(compilation, ctx, metadataList);
             });
     }
 
@@ -127,8 +146,9 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
     /// <param name="nodes">语法节点集合</param>
     /// <param name="compilation">编译上下文</param>
     /// <param name="isGeneric">是否为泛型属性</param>
+    /// <param name="isGenericWithMapper">是否为带Mapper的泛型属性</param>
     /// <returns>AutoDto元数据列表</returns>
-    private static List<AutoDtoMetadata> GetMeta(ImmutableArray<GeneratorAttributeSyntaxContext> nodes, Compilation compilation, bool isGeneric = false)
+    private static List<AutoDtoMetadata> GetMeta(ImmutableArray<GeneratorAttributeSyntaxContext> nodes, Compilation compilation, bool isGeneric, bool isGenericWithMapper)
     {
         List<AutoDtoMetadata> retn = [];
         if (nodes.Length == 0) return retn;
@@ -137,51 +157,100 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
         {
             var node = (TypeDeclarationSyntax)syntaxContext.TargetNode;
             var semanticModel = syntaxContext.SemanticModel;
-
-            // 如果是Record类
             var isRecord = syntaxContext.TargetNode is RecordDeclarationSyntax;
 
-            // 不再需要检查 partial 修饰符，因为在谓词函数中已经筛选过了
             AttributeSyntax? attributeSyntax = null;
             foreach (var attr in node.AttributeLists.AsEnumerable())
             {
-                var attrName = attr.Attributes.FirstOrDefault()?.Name.ToString();
-                if (isGeneric
-                    ? attrName?.IndexOf(AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0
-                    : attrName == AttributeValueMetadataNameDto)
+                foreach (var a in attr.Attributes)
                 {
-                    attributeSyntax = attr.Attributes.First(x => isGeneric
-                        ? x.Name.ToString().IndexOf(AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0
-                        : x.Name.ToString() == AttributeValueMetadataNameDto);
-                    break;
+                    var attrName = a.Name.ToString();
+                    if (isGenericWithMapper)
+                    {
+                        if (attrName.IndexOf("AutoDtoWithMapper", StringComparison.Ordinal) == 0)
+                        {
+                            attributeSyntax = a; break;
+                        }
+                    }
+                    else if (isGeneric)
+                    {
+                        if (attrName.IndexOf(AttributeValueMetadataNameDto, StringComparison.Ordinal) == 0 && !attrName.StartsWith("AutoDtoWithMapper", StringComparison.Ordinal))
+                        { attributeSyntax = a; break; }
+                    }
+                    else
+                    {
+                        if (attrName == AttributeValueMetadataNameDto)
+                        { attributeSyntax = a; break; }
+                    }
                 }
+                if (attributeSyntax != null) break;
             }
 
-            if (attributeSyntax == null)
-            {
-                continue;
-            }
+            if (attributeSyntax == null) continue;
 
-            // 提取实体名称和类型信息（这是两个方法的主要区别）
-            var entityInfo = ExtractEntityInfo(attributeSyntax, semanticModel, isGeneric);
-            if (entityInfo == null || string.IsNullOrEmpty(entityInfo.EntityName))
-            {
-                continue;
-            }
+            var entityInfo = ExtractEntityInfo(attributeSyntax, semanticModel, isGeneric || isGenericWithMapper);
+            if (entityInfo == null || string.IsNullOrEmpty(entityInfo.EntityName)) continue;
 
-            // 获取命名空间
             var rootNamespace = GetRootNamespace(node);
 
-            // 提取需排除的属性
-            HashSet<string> escapes = GetEscapeProperties(attributeSyntax, isGeneric);
+            // 忽略属性与静态Mapper解析
+            HashSet<string> escapes;
+            INamedTypeSymbol? mapperTypeSymbol = null;
+            if (isGenericWithMapper)
+            {
+                escapes = [];
+                if (attributeSyntax.ArgumentList != null)
+                {
+                    foreach (var arg in attributeSyntax.ArgumentList.Arguments)
+                    {
+                        // 识别命名参数 mapper: typeof(Xxx)
+                        var isMapperNamed = arg.NameEquals?.Name.Identifier.Text == "mapper" || arg.NameColon?.Name.Identifier.Text == "mapper";
 
-            retn.Add(new AutoDtoMetadata(entityInfo.EntityName, node.Identifier.ValueText, escapes)
+                        if (arg.Expression is TypeOfExpressionSyntax typeOfExpr)
+                        {
+                            var typeInfo = semanticModel.GetTypeInfo(typeOfExpr.Type);
+                            var typeSymbol = typeInfo.Type as INamedTypeSymbol;
+                            if (mapperTypeSymbol == null && (isMapperNamed || !escapes.Any()))
+                            {
+                                // 这里默认第一个 typeof 当作 mapper (若未显式命名)
+                                mapperTypeSymbol = typeSymbol;
+                                continue;
+                            }
+                        }
+                        // 其余按忽略属性处理
+                        if (arg.Expression.IsKind(SyntaxKind.InvocationExpression))
+                        {
+                            var name = (arg.Expression as InvocationExpressionSyntax)!.ArgumentList.DescendantNodes().First().ToString();
+                            escapes.Add(name.Split(['.'], StringSplitOptions.RemoveEmptyEntries).Last());
+                        }
+                        else if (arg.Expression.IsKind(SyntaxKind.StringLiteralExpression))
+                        {
+                            var name = (arg.Expression as LiteralExpressionSyntax)!.Token.ValueText;
+                            escapes.Add(name);
+                        }
+                        else if (arg.Expression.IsKind(SyntaxKind.IdentifierName))
+                        {
+                            var name = (arg.Expression as IdentifierNameSyntax)!.Identifier.ValueText;
+                            escapes.Add(name);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                escapes = GetEscapeProperties(attributeSyntax, isGeneric);
+            }
+
+            var metadata = new AutoDtoMetadata(entityInfo.EntityName, node.Identifier.ValueText, escapes)
             {
                 IsRecord = isRecord,
                 RootNamespace = rootNamespace,
-                IsComplex = false, // 默认不是复杂DTO，除非明确标记了AutoDtoComplex特性
-                EntityTypeSymbol = entityInfo.EntityTypeSymbol, // 保存实体类型符号用于后续处理
-            });
+                IsComplex = false,
+                EntityTypeSymbol = entityInfo.EntityTypeSymbol,
+                StaticMapperTypeSymbol = mapperTypeSymbol,
+            };
+
+            retn.Add(metadata);
         }
 
         return retn;
@@ -600,12 +669,12 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
 
                     List<string> haveProps = [];
                     // 收集生成的所有属性名称
-                    HashSet<string> generatedProperties = new();
+                    HashSet<string> generatedProperties = [];
                     // 存储嵌套对象的属性映射代码
-                    Dictionary<string, string> nestedObjectMappers = new();
-                    Dictionary<string, string> nestedObjectReverseMappers = new();
+                    Dictionary<string, string> nestedObjectMappers = [];
+                    Dictionary<string, string> nestedObjectReverseMappers = [];
                     // 存储嵌套对象的属性名和类型信息
-                    Dictionary<string, Tuple<string, string>> nestedObjects = new Dictionary<string, Tuple<string, string>>();
+                    Dictionary<string, Tuple<string, string>> nestedObjects = [];
 
                     // 生成属性
                     void GenProperty(ITypeSymbol @type, bool isBaseType = false, int currentNestingLevel = 0, bool shouldGenerateProperty = true)
@@ -990,7 +1059,7 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                     finalMapperBodyBuilder.Append(specialMapperBuilder.ToString());
 
                     // 添加普通属性反向映射
-                    foreach (var line in mapperBodyBuilder2.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var line in mapperBodyBuilder2.ToString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries))
                     {
                         var propertyName = line.Trim().Split('=')[0].Trim();
                         // 确保不是嵌套对象映射，避免重复
@@ -1003,14 +1072,30 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
                     // 添加嵌套对象反向映射
                     finalReverseMapperBodyBuilder.Append(specialReverseMapperBuilder.ToString());
 
+                    // 生成静态映射调用 (仅正向)
+                    string staticMapperCall = string.Empty;
+                    if (metadata.StaticMapperTypeSymbol != null)
+                    {
+                        // 验证静态Mapper是否与当前DTO兼容
+                        if (IsCompatibleStaticMapper(metadata.StaticMapperTypeSymbol, metadata.EntityTypeSymbol, metadata.ToClass))
+                        {
+                            var mapperNs = metadata.StaticMapperTypeSymbol.ContainingNamespace?.ToDisplayString();
+                            if (!string.IsNullOrEmpty(mapperNs) && !source.Contains($"using {mapperNs};"))
+                            {
+                                source = source.Replace("$namespace", $"using {mapperNs};\r\n" + "$namespace");
+                            }
+                            staticMapperCall = $"{metadata.StaticMapperTypeSymbol.ToDisplayString()}.Map(model, retn);";
+                        }
+                    }
+
                     var mapperSource = MapperTemplate.Replace("$namespace", namespaces.Count > 0 ? namespaces.First() : metadata.RootNamespace);
                     mapperSource = mapperSource.Replace("$ns", metadata.RootNamespace);
                     mapperSource = mapperSource.Replace("$baseclass", metadata.FromClass);
                     mapperSource = mapperSource.Replace("$dtoclass", className);
                     mapperSource = mapperSource.Replace("$body", finalMapperBodyBuilder.ToString());
                     mapperSource = mapperSource.Replace("$2body", finalReverseMapperBodyBuilder.ToString());
-
-                    // 合并
+                    mapperSource = mapperSource.Replace("$staticmap$", staticMapperCall);
+                    mapperSource = mapperSource.Replace("$staticmap2$", string.Empty);
                     source = $"{source}\r\n{mapperSource}";
                     envStringBuilder.AppendLine(source);
                 }
@@ -1038,6 +1123,39 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
         context.AddSource($"Biwen.AutoClassGenDto.g.cs", SourceText.From(envSource, Encoding.UTF8));
     }
 
+    private static bool IsCompatibleStaticMapper(INamedTypeSymbol mapperType, ITypeSymbol? fromSymbol, string targetDtoName)
+    {
+        if (fromSymbol == null) return false;
+        foreach (var iface in mapperType.AllInterfaces)
+        {
+            if (iface.Name == "IStaticAutoDtoMapper" && iface.TypeArguments.Length == 2)
+            {
+                var fromArg = iface.TypeArguments[0];
+                var toArg = iface.TypeArguments[1];
+                if (SymbolEqualityComparer.Default.Equals(fromArg, fromSymbol))
+                {
+                    // 允许名称或完整限定名匹配
+                    if (toArg.Name == targetDtoName || toArg.ToDisplayString().EndsWith('.' + targetDtoName, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        // 兼容用户未实现接口但直接提供静态 Map(User, TargetDto) 方法的情况
+        // 查找静态 Map 方法匹配参数
+        var mapMethods = mapperType.GetMembers("Map").OfType<IMethodSymbol>().Where(m => m.IsStatic && m.Parameters.Length == 2);
+        foreach (var m in mapMethods)
+        {
+            if (SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, fromSymbol) &&
+                (m.Parameters[1].Type.Name == targetDtoName || m.Parameters[1].Type.ToDisplayString().EndsWith('.' + targetDtoName, StringComparison.Ordinal)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private record AutoDtoMetadata(string FromClass, string ToClass, HashSet<string> Escapes)
     {
         public string? RootNamespace { get; set; }
@@ -1057,6 +1175,11 @@ public class AutoDtoSourceGenerator : IIncrementalGenerator
         /// 原始类型的符号引用,用于避免重复查找
         /// </summary>
         public ITypeSymbol? EntityTypeSymbol { get; set; }
+
+        /// <summary>
+        /// 新增: 提供静态映射方法的类型符号引用
+        /// </summary>
+        public INamedTypeSymbol? StaticMapperTypeSymbol { get; set; }
     }
 
     /// <summary>
@@ -1130,6 +1253,7 @@ namespace $namespace
             {
                 $body
             };
+            $staticmap$
             MapperToPartial(model, retn);
             return retn;
         }
@@ -1141,7 +1265,6 @@ namespace $namespace
         {
             return query.Select(model => model.MapperTo$dtoclass());
         }
-        
     }
 
     public static partial class $dtoclassTo$baseclassExtentions
@@ -1162,6 +1285,7 @@ namespace $namespace
             {
                 $2body
             };
+            $staticmap2$
             MapperToPartial(model, retn);
             return retn;
         }

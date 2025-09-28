@@ -15,6 +15,8 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
 
     public const string DiagnosticIdGEN041 = "GEN041";
     public const string DiagnosticIdGEN042 = "GEN042";
+    public const string DiagnosticIdGEN046 = "GEN046"; // AutoDtoWithMapper 缺少或非法 mapper 参数
+    public const string DiagnosticIdGEN047 = "GEN047"; // AutoDtoWithMapper mapper 泛型参数不匹配
 
     private static readonly LocalizableString Title = "无法解析目标类型";
     private static readonly LocalizableString MessageFormat = "无法解析目标类型，请确保引用了正确的程序集并且类型可访问";
@@ -32,9 +34,13 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString MessageFormatGEN041 = "重复标注了[AutoDto],请删除多余的标注, 实际上 AutoDto可以和AutoDtoComplex并存, 请修改对应分析器的错误";
     private static readonly LocalizableString DescriptionGEN041 = "重复标注[AutoDto]. AutoDto 可以和 AutoDtoComplex 并存, 但不能有多个相同的 AutoDto 或 AutoDtoComplex 特性.";
 
+    private static readonly LocalizableString TitleGEN046 = "AutoDtoWithMapper 缺少有效的 mapper 参数";
+    private static readonly LocalizableString MessageFormatGEN046 = "[AutoDtoWithMapper] 需要提供有效的 mapper 类型参数 typeof(YourMapper) 且不能为空";
+    private static readonly LocalizableString DescriptionGEN046 = "在 AutoDtoWithMapper 特性中未提供有效的 mapper 参数 (null 或缺失).";
 
-
-
+    private static readonly LocalizableString TitleGEN047 = "AutoDtoWithMapper 的 IStaticAutoDtoMapper 泛型参数不匹配";
+    private static readonly LocalizableString MessageFormatGEN047 = "提供的 mapper 类型未正确实现 IStaticAutoDtoMapper<源实体, 当前DTO> 接口或泛型参数不匹配: {0}";
+    private static readonly LocalizableString DescriptionGEN047 = "检查 AutoDtoWithMapper 的 mapper 类型是否实现 IStaticAutoDtoMapper<TFrom,TTo> 且 TFrom 与特性泛型参数一致, TTo 为当前 DTO 类型.";
 
     private const string Category = "GEN";
 
@@ -55,12 +61,21 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
     DiagnosticIdGEN042, Title3, MessageFormat3, Category,
     DiagnosticSeverity.Error, isEnabledByDefault: true, description: Description3);
 
+    private static readonly DiagnosticDescriptor RuleGEN046 = new(
+    DiagnosticIdGEN046, TitleGEN046, MessageFormatGEN046, Category,
+    DiagnosticSeverity.Warning, isEnabledByDefault: true, description: DescriptionGEN046);
+
+    private static readonly DiagnosticDescriptor RuleGEN047 = new(
+    DiagnosticIdGEN047, TitleGEN047, MessageFormatGEN047, Category,
+    DiagnosticSeverity.Warning, isEnabledByDefault: true, description: DescriptionGEN047);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [
         RuleGEN041,
         RuleGEN042,
         RuleGEN044,
-        RuleGEN045];
+        RuleGEN045,
+        RuleGEN046,
+        RuleGEN047];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -79,7 +94,7 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
         if (attributeLists.Count == 0)
             return;
 
-        // 筛选出所有 AutoDto 相关的特性
+        // 筛选出所有 AutoDto* 相关的特性
         var autoDtoAttributes = attributeLists
             .SelectMany(x => x.Attributes)
             .Where(x => x.Name.ToString().IndexOf("AutoDto", StringComparison.Ordinal) == 0)
@@ -88,18 +103,23 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
         if (autoDtoAttributes.Count == 0)
             return;
 
-        // 分别检查 AutoDto 和 AutoDtoComplex 特性
+        // 分别检查 AutoDto 和 AutoDtoComplex 特性 (不含 AutoDtoWithMapper)
         var autoDtoOnlyAttributes = autoDtoAttributes
-            .Where(x => 
+            .Where(x =>
             {
                 var attrName = x.Name.ToString();
-                return attrName == "AutoDto" || 
-                       (x.Name is GenericNameSyntax && attrName.StartsWith("AutoDto<", StringComparison.Ordinal));
+                return (attrName == "AutoDto" ||
+                       (x.Name is GenericNameSyntax && attrName.StartsWith("AutoDto<", StringComparison.Ordinal))) &&
+                       !attrName.StartsWith("AutoDtoWithMapper", StringComparison.Ordinal);
             })
             .ToList();
 
         var autoDtoComplexAttributes = autoDtoAttributes
             .Where(x => x.Name.ToString() == "AutoDtoComplex")
+            .ToList();
+
+        var autoDtoWithMapperAttributes = autoDtoAttributes
+            .Where(x => x.Name.ToString().StartsWith("AutoDtoWithMapper", StringComparison.Ordinal))
             .ToList();
 
         // 检查是否有多个 AutoDto 特性（不包括 AutoDtoComplex）
@@ -134,20 +154,17 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Diagnostic.Create(RuleGEN042, location));
         }
 
-        // 遍历每个 AutoDto 特性，提取并验证实体类型
+        // 处理普通 AutoDto/泛型 AutoDto 的实体类型解析诊断
         foreach (var attribute in autoDtoOnlyAttributes)
         {
             TypeSyntax? targetTypeSyntax = null;
 
-            // 处理泛型特性和非泛型特性
             if (attribute.Name is GenericNameSyntax genericName)
             {
-                // 泛型特性: [AutoDto<EntityType>]
                 targetTypeSyntax = genericName.TypeArgumentList.Arguments.FirstOrDefault();
             }
             else
             {
-                // 非泛型特性: [AutoDto(typeof(EntityType))]
                 var argument = attribute.ArgumentList?.Arguments.FirstOrDefault();
                 if (argument != null)
                 {
@@ -159,7 +176,6 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            // 如果成功提取了目标类型语法，使用语义模型验证类型
             if (targetTypeSyntax != null)
             {
                 var typeInfo = context.SemanticModel.GetTypeInfo(targetTypeSyntax);
@@ -167,52 +183,142 @@ public class AutoDtoAnalyzer : DiagnosticAnalyzer
 
                 if (targetTypeSymbol == null || targetTypeSymbol.TypeKind == TypeKind.Error)
                 {
-                    // 如果无法解析类型，报告诊断信息
                     context.ReportDiagnostic(Diagnostic.Create(RuleGEN044, attribute.GetLocation()));
                 }
                 else
                 {
-                    // 可选：检查类型的可访问性
                     if (targetTypeSymbol.DeclaredAccessibility != Accessibility.Public &&
                         targetTypeSymbol.DeclaredAccessibility != Accessibility.Internal)
                     {
-                        // 如果类型不是公共或内部的，可能无法访问
                         context.ReportDiagnostic(Diagnostic.Create(RuleGEN044, attribute.GetLocation()));
                     }
                 }
             }
         }
+
+        // 处理 AutoDtoWithMapper 特性
+        if (autoDtoWithMapperAttributes.Count > 0)
+        {
+            var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+            if (classSymbol == null) return;
+
+            foreach (var attribute in autoDtoWithMapperAttributes)
+            {
+                // 获取泛型实体类型
+                ITypeSymbol? entityTypeSymbol = null;
+                if (attribute.Name is GenericNameSyntax gname && gname.TypeArgumentList.Arguments.Count > 0)
+                {
+                    var entTypeSyntax = gname.TypeArgumentList.Arguments[0];
+                    entityTypeSymbol = context.SemanticModel.GetTypeInfo(entTypeSyntax).Type;
+                }
+
+                // 获取 mapper 参数 (第一个参数 或 命名 mapper = ...)
+                AttributeArgumentSyntax? mapperArg = null;
+                if (attribute.ArgumentList != null)
+                {
+                    // 优先寻找命名参数 mapper =
+                    mapperArg = attribute.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "mapper");
+                    if (mapperArg == null && attribute.ArgumentList.Arguments.Count > 0)
+                    {
+                        mapperArg = attribute.ArgumentList.Arguments[0];
+                    }
+                }
+
+                // 验证 mapper 参数是否缺失/为 null/不是 typeof
+                bool invalidMapper = false;
+                ITypeSymbol? mapperTypeSymbol = null;
+                if (mapperArg == null)
+                {
+                    invalidMapper = true;
+                }
+                else
+                {
+                    var expr = mapperArg.Expression;
+                    if (expr.IsKind(SyntaxKind.NullLiteralExpression))
+                    {
+                        invalidMapper = true;
+                    }
+                    else if (expr is TypeOfExpressionSyntax typeOfExpr)
+                    {
+                        mapperTypeSymbol = context.SemanticModel.GetTypeInfo(typeOfExpr.Type).Type;
+                        if (mapperTypeSymbol == null || mapperTypeSymbol.TypeKind == TypeKind.Error)
+                        {
+                            invalidMapper = true;
+                        }
+                    }
+                    else
+                    {
+                        invalidMapper = true; // 不是 typeof(...) 形式
+                    }
+                }
+
+                if (invalidMapper)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(RuleGEN046, attribute.GetLocation()));
+                    continue; // 没有 mapper 无法继续泛型匹配
+                }
+
+                // 如果无法解析实体类型, 不再继续匹配 IStaticAutoDtoMapper
+                if (entityTypeSymbol == null || entityTypeSymbol.TypeKind == TypeKind.Error)
+                {
+                    // 这里沿用已有 GEN044 规则 (实体类型解析失败)
+                    context.ReportDiagnostic(Diagnostic.Create(RuleGEN044, attribute.GetLocation()));
+                    continue;
+                }
+
+                // 检查 mapper 是否实现 IStaticAutoDtoMapper<TFrom,TTo>
+                bool foundInterface = false;
+                bool genericMatch = false;
+                if (mapperTypeSymbol is INamedTypeSymbol namedMapper)
+                {
+                    foreach (var iface in namedMapper.AllInterfaces)
+                    {
+                        if (iface.Name == "IStaticAutoDtoMapper" && iface.TypeArguments.Length == 2)
+                        {
+                            foundInterface = true;
+                            var fromArg = iface.TypeArguments[0];
+                            var toArg = iface.TypeArguments[1];
+                            if (SymbolEqualityComparer.Default.Equals(fromArg, entityTypeSymbol) &&
+                                SymbolEqualityComparer.Default.Equals(toArg, classSymbol))
+                            {
+                                genericMatch = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!foundInterface || !genericMatch)
+                {
+                    // 给出 mapper 类型名 (可能为空)
+                    var mapperDisplay = mapperTypeSymbol?.ToDisplayString() ?? "<unknown>";
+                    context.ReportDiagnostic(Diagnostic.Create(RuleGEN047, attribute.GetLocation(), mapperDisplay));
+                }
+            }
+        }
     }
 
-    /// <summary>
-    /// 获取类型的简单名称（不包含命名空间）
-    /// </summary>
-    /// <param name="type">类型语法</param>
-    /// <returns>简单类型名</returns>
+    // 获取类型的简单名称（不包含命名空间） - 当前未使用保留
     private static string GetSimpleTypeName(TypeSyntax type)
     {
         switch (type)
         {
             case IdentifierNameSyntax identifierName:
                 return identifierName.Identifier.ValueText;
-
             case QualifiedNameSyntax qualifiedName:
-                // 对于限定名，返回最后一部分
                 return qualifiedName.Right.Identifier.ValueText;
-
             case AliasQualifiedNameSyntax aliasQualifiedName:
                 return aliasQualifiedName.Name.Identifier.ValueText;
-
             case GenericNameSyntax genericName:
-                // 对于泛型名称，只返回基础类型名（不含泛型参数）
                 return genericName.Identifier.ValueText;
-
             default:
-                // 对于其他情况，转为字符串并尝试取最后一段
                 var fullName = type.ToString();
                 var lastDotIndex = fullName.LastIndexOf('.');
-                return lastDotIndex >= 0 ? fullName.Substring(lastDotIndex + 1) : fullName;
+                if (lastDotIndex >= 0 && lastDotIndex < fullName.Length - 1)
+                {
+                    return fullName.Substring(lastDotIndex + 1);
+                }
+                return fullName;
         }
     }
-
 }

@@ -1,5 +1,39 @@
 ﻿namespace Biwen.AutoClassGen.Attributes;
 
+#nullable enable
+
+#if NET7_0_OR_GREATER
+
+/// <summary>
+/// 提供静态映射方法接口
+/// </summary>
+/// <typeparam name="TFrom"></typeparam>
+/// <typeparam name="TTo"></typeparam>
+public interface IStaticAutoDtoMapper<TFrom, TTo>
+{
+    /// <summary>
+    /// 转换
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    static abstract void Map(TFrom from, TTo to);
+}
+
+/// <summary>
+/// 提供静态映射方法接口的自动创建Dto
+/// </summary>
+/// <typeparam name="TFrom"></typeparam>
+/// <param name="mapper"></param>
+/// <param name="ignoredProperties"></param>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+public class AutoDtoWithMapperAttribute<TFrom>(Type? mapper = null, params string[] ignoredProperties) : AutoDtoAttribute(typeof(TFrom), ignoredProperties)
+    where TFrom : class
+{
+    public Type? Mapper { get; private set; } = mapper;
+}
+
+#endif
+
 /// <summary>
 /// 自动创建Dto
 /// </summary>
@@ -25,6 +59,7 @@ public class AutoDtoAttribute<T>(params string[] ignoredProperties) : AutoDtoAtt
 }
 
 #endif
+
 
 /// <summary>
 /// 提供复杂对象的DTO,支持嵌套生成
