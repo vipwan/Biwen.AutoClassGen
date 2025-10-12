@@ -21,7 +21,21 @@ Biwen.AutoClassGen 是一个代码生成工具库，通过源代码生成器（S
 
 [中文文档](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
 
-## AutoCurd（自动生成 CURD 服务）
+
+## 快速开始
+
+### 安装
+
+```xml
+<ItemGroup>
+	<PackageReference Include="Biwen.AutoClassGen.Attributes" Version="x.x.x" />
+	<PackageReference Include="Biwen.AutoClassGen" Version="x.x.x" PrivateAssets="all" />
+</ItemGroup>
+```
+
+### 主要功能示例
+
+#### 1. AutoCurd（自动生成 CURD 服务）
 
 该功能可以为标注了 `AutoCurd` 特性的实体类型自动生成常见的 CRUD 服务接口与实现（例如 `IUserCurdService` / `UserCurdService`），减少手写样板代码。
 
@@ -64,20 +78,8 @@ public partial class Product { ... }
 public partial class Order { ... }
 ```
 
-## 快速开始
 
-### 安装
-
-```xml
-<ItemGroup>
-	<PackageReference Include="Biwen.AutoClassGen.Attributes" Version="x.x.x" />
-	<PackageReference Include="Biwen.AutoClassGen" Version="x.x.x" PrivateAssets="all" />
-</ItemGroup>
-```
-
-### 主要功能示例
-
-#### 1. DTO自动生成
+#### 2. DTO自动生成
 通过简单的特性标记，自动生成DTO类和映射方法：
 ```csharp
 [AutoDto(typeof(User))]  // 或使用 C# 11+ 的泛型特性: [AutoDto<User>]
@@ -87,7 +89,7 @@ public partial class UserDto
 }
 ```
 
-#### 2. 装饰器模式自动实现
+#### 3. 装饰器模式自动实现
 轻松实现AOP装饰器模式：
 ```csharp
 [AutoDecor<LoggingDecorator>]
@@ -97,7 +99,7 @@ public interface IUserService
 }
 ```
 
-#### 3. 依赖注入自动注册
+#### 4. 依赖注入自动注册
 自动注册服务到DI容器：
 ```csharp
 [AutoInject<IUserService>(ServiceLifetime.Scoped)]
@@ -107,14 +109,14 @@ public class UserService : IUserService
 }
 ```
 
-#### 4. 版本信息自动生成
+#### 5. 版本信息自动生成
 自动生成程序集版本信息，支持git版本号：
 ```csharp
 Console.WriteLine($"Version: {XXX.Generated.Version}");
 Console.WriteLine($"Version: {XXX.Generated.AssemblyMetadata}");
 ```
 
-#### 5. 枚举描述自动生成
+#### 6. 枚举描述自动生成
 ```csharp
 [AutoDescription]
 public enum UserStatus
