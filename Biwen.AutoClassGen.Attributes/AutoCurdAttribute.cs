@@ -30,3 +30,33 @@ public class AutoCurdAttribute<T> : Attribute where T : class
 }
 
 #endif
+
+
+#if NET6_0_OR_GREATER
+
+
+/// <summary>
+/// 自动实现CURD
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public class AutoCurdAttribute : Attribute
+{
+    public AutoCurdAttribute(Type dbContextType, string @namespace)
+    {
+        Namespace = @namespace;
+        DbContextType = dbContextType;
+    }
+
+    /// <summary>
+    /// The DbContext type to be used for CRUD operations.
+    /// </summary>
+    public Type DbContextType { get; set; }
+
+    /// <summary>
+    /// 生成的类所在的命名空间
+    /// </summary>
+    public string Namespace { get; private set; }
+
+}
+
+#endif

@@ -56,6 +56,17 @@ public partial class User
 }
 ```
 
+- 非泛型形式
+```csharp
+[AutoCurd(typeof(MyDbContext), "Your.Target.Namespace")]
+public partial class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+```
+
+
 生成规则和约定：
 - `Target.Namespace`（字符串）参数用于指定生成的接口/实现所在的命名空间。如果不指定或为空，生成器会使用程序集名称作为回退命名空间。
 - 为 `User` 生成的代码示例：
@@ -65,7 +76,8 @@ public partial class User
 
 诊断与错误：
 - `GENCURD001`：当 `AutoCurd` 的泛型参数不是 `DbContext` 的派生类型时触发（例如 `[AutoCurd<User>("ns")]`），分析器将在特性处或类型处报告错误，说明需要传入正确的 `DbContext` 类型。
-
+- `GENCURD002`：不可同时在同一实体上使用多个 `AutoCurd` 特性。
+- `GENCURD003`：`AutoCurd` 标注的实体必须是对应的 `DbContext` 的 `DbSet` 属性类型。
 示例：
 
 ```csharp

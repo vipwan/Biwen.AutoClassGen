@@ -11,65 +11,89 @@ namespace Biwen.AutoClassGen;
 internal class AutoGurdSourceGenerator : IIncrementalGenerator
 {
     private const string GenericAutoCurdAttributeName = "Biwen.AutoClassGen.Attributes.AutoCurdAttribute`1";
+    private const string NonGenericAutoCurdAttributeName = "Biwen.AutoClassGen.Attributes.AutoCurdAttribute";
     private const string AttributeValueName = "AutoCurd";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // 只收集带有 AutoCurdAttribute<T> 的类型（即实体类型本身标注了该特性）
-        var nodes = context.SyntaxProvider.ForAttributeWithMetadataName(
+        // 支持泛型形式和非泛型 typeof(...) 形式
+        var nodesGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             GenericAutoCurdAttributeName,
             predicate: (node, ct) => node is TypeDeclarationSyntax,
             transform: (ctx, ct) => ctx).Collect();
 
-        var comp = context.CompilationProvider.Combine(nodes);
+        var nodesNonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
+            NonGenericAutoCurdAttributeName,
+            predicate: (node, ct) => node is TypeDeclarationSyntax,
+            transform: (ctx, ct) => ctx).Collect();
+
+        var join = nodesGeneric.Combine(nodesNonGeneric);
+        var comp = context.CompilationProvider.Combine(join);
 
         context.RegisterSourceOutput(comp, (spc, items) =>
         {
             var compilation = items.Left;
-            var attributeNodes = items.Right;
+            var nodesPair = items.Right; // Left: nodesGeneric, Right: nodesNonGeneric
+            var nodesG = nodesPair.Left;
+            var nodesN = nodesPair.Right;
 
-            if (attributeNodes.IsDefaultOrEmpty) return;
+            if (nodesG.IsDefaultOrEmpty && nodesN.IsDefaultOrEmpty) return;
 
-            foreach (var attrContext in attributeNodes)
+            // Track generated entities to avoid duplicates in case of mixed attributes
+            var generated = new HashSet<string>();
+
+            void ProcessAttrContext(GeneratorAttributeSyntaxContext attrContext, bool isGenericProvider)
             {
-#pragma warning disable CA1031 // 不捕获常规异常类型
-                try
+                if (attrContext.TargetNode is not TypeDeclarationSyntax node) return;
+
+                // Find the specific AutoCurd attribute syntax instance on this node that matches provider type
+                AttributeSyntax? matchingAttr = null;
+                foreach (var al in node.AttributeLists)
                 {
-                    if (attrContext.TargetNode is not TypeDeclarationSyntax node) continue;
-
-                    // 只为带有特性的类型本身生成服务
-                    AttributeSyntax? attributeSyntax = null;
-                    foreach (var al in node.AttributeLists)
+                    foreach (var a in al.Attributes)
                     {
-                        foreach (var a in al.Attributes)
-                        {
-                            var name = a.Name.ToString();
-                            if (name.IndexOf(AttributeValueName, System.StringComparison.Ordinal) >= 0)
-                            {
-                                attributeSyntax = a;
-                                break;
-                            }
-                        }
-                        if (attributeSyntax != null) break;
+                        var name = a.Name.ToString();
+                        if (name.IndexOf(AttributeValueName, System.StringComparison.Ordinal) < 0) continue;
+
+                        // Decide if this attribute instance corresponds to generic or non-generic provider
+                        if (isGenericProvider && a.Name is GenericNameSyntax) { matchingAttr = a; break; }
+                        if (!isGenericProvider && !(a.Name is GenericNameSyntax)) { matchingAttr = a; break; }
                     }
-                    if (attributeSyntax == null) continue;
+                    if (matchingAttr != null) break;
+                }
+                if (matchingAttr == null) return;
 
-                    var semanticModel = attrContext.SemanticModel;
+                var semanticModel = attrContext.SemanticModel;
 
-                    // 解析 DbContext 类型参数（可选，仅用于生成代码时类型引用）
-                    ITypeSymbol? dbContextSymbol = null;
-                    if (attributeSyntax.Name is GenericNameSyntax gname && gname.TypeArgumentList.Arguments.Count > 0)
+                // Resolve DbContext symbol from either generic type argument or typeof(...) expression
+                ITypeSymbol? dbContextSymbol = null;
+                if (matchingAttr.Name is GenericNameSyntax gname && gname.TypeArgumentList.Arguments.Count > 0)
+                {
+                    var typeArg = gname.TypeArgumentList.Arguments[0];
+                    var typeInfo = semanticModel.GetTypeInfo(typeArg);
+                    dbContextSymbol = typeInfo.Type;
+                }
+                else if (matchingAttr.ArgumentList != null && matchingAttr.ArgumentList.Arguments.Count > 0)
+                {
+                    // first argument might be typeof(MyDbContext)
+                    var firstExpr = matchingAttr.ArgumentList.Arguments[0].Expression;
+                    if (firstExpr is TypeOfExpressionSyntax tof)
                     {
-                        var typeArg = gname.TypeArgumentList.Arguments[0];
-                        var typeInfo = semanticModel.GetTypeInfo(typeArg);
+                        var typeInfo = semanticModel.GetTypeInfo(tof.Type);
                         dbContextSymbol = typeInfo.Type;
                     }
+                }
 
-                    // 解析命名空间参数: 构造函数第一个参数是目标命名空间(string)
-                    string targetNamespace = string.Empty;
-                    if (attributeSyntax.ArgumentList != null && attributeSyntax.ArgumentList.Arguments.Count > 0)
+                // parse namespace parameter
+                string targetNamespace = string.Empty;
+                if (matchingAttr.ArgumentList != null && matchingAttr.ArgumentList.Arguments.Count > 0)
+                {
+                    // if first arg is typeof, namespace may be second
+                    int idx = 0;
+                    if (matchingAttr.ArgumentList.Arguments[0].Expression is TypeOfExpressionSyntax) idx = 1;
+                    if (matchingAttr.ArgumentList.Arguments.Count > idx)
                     {
-                        var expr = attributeSyntax.ArgumentList.Arguments[0].Expression;
+                        var expr = matchingAttr.ArgumentList.Arguments[idx].Expression;
                         var constVal = semanticModel.GetConstantValue(expr);
                         if (constVal.HasValue && constVal.Value is string s)
                         {
@@ -77,26 +101,30 @@ internal class AutoGurdSourceGenerator : IIncrementalGenerator
                         }
                         else
                         {
-                            // fallback to expression text
                             targetNamespace = expr.ToString().Trim('"');
                         }
                     }
-                    if (string.IsNullOrEmpty(targetNamespace))
-                    {
-                        targetNamespace = compilation.AssemblyName ?? "GeneratedServices";
-                    }
-
-                    // 只为当前类型生成服务
-                    if (node is not ClassDeclarationSyntax classNode) continue;
-                    if (semanticModel.GetDeclaredSymbol(classNode) is not INamedTypeSymbol entitySymbol) continue;
-
-                    GenerateForEntity(spc, compilation, targetNamespace, dbContextSymbol, entitySymbol);
                 }
-                catch
-                {
-                    // todo:
-                }
-#pragma warning restore CA1031 // 不捕获常规异常类型
+
+                if (string.IsNullOrEmpty(targetNamespace)) targetNamespace = compilation.AssemblyName ?? "GeneratedServices";
+
+                if (node is not ClassDeclarationSyntax classNode) return;
+                if (semanticModel.GetDeclaredSymbol(classNode) is not INamedTypeSymbol entitySymbol) return;
+
+                var fq = entitySymbol.ToDisplayString();
+                if (generated.Contains(fq)) return;
+                generated.Add(fq);
+
+                GenerateForEntity(spc, compilation, targetNamespace, dbContextSymbol, entitySymbol);
+            }
+
+            foreach (var ctx in nodesG)
+            {
+                ProcessAttrContext(ctx, true);
+            }
+            foreach (var ctx in nodesN)
+            {
+                ProcessAttrContext(ctx, false);
             }
         });
     }
