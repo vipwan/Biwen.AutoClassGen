@@ -10,6 +10,7 @@ Biwen.AutoClassGen 是一个代码生成工具库，通过源代码生成器（S
 ## 主要功能
 
 - **DTO自动生成**：自动从实体类生成DTO对象，并创建映射扩展方法
+- **Curd服务生成**：为标注了特性的实体类生成常见的CRUD服务接口与实现
 - **请求对象生成**：快速生成具有相同字段的请求对象族，减少重复工作
 - **AOP装饰器模式**：自动实现装饰器模式，无需手动编写大量样板代码
 - **依赖注入自动注册**：通过简单的特性标记，自动注册服务到DI容器
@@ -19,6 +20,49 @@ Biwen.AutoClassGen 是一个代码生成工具库，通过源代码生成器（S
 - **枚举描述生成**：根据枚举值自动生成描述信息(`Description`,`Display`)，方便在UI中显示
 
 [中文文档](https://github.com/vipwan/Biwen.AutoClassGen/blob/master/README-zh.md)
+
+## AutoCurd（自动生成 CURD 服务）
+
+该功能可以为标注了 `AutoCurd` 特性的实体类型自动生成常见的 CRUD 服务接口与实现（例如 `IUserCurdService` / `UserCurdService`），减少手写样板代码。
+
+重要行为说明：
+- 生成器只会为显式标注了 `AutoCurd` 特性的实体生成服务。即必须把特性放到实体类型本身上，才会生成对应的接口与实现。
+- 分析器会在编译时校验 `AutoCurd` 的泛型参数是否为 `Microsoft.EntityFrameworkCore.DbContext` 的派生类型；若不是，会产生错误诊断 `GENCURD001`。
+
+特性使用方式：
+
+- 泛型形式（C# 11+ 泛型特性）
+
+```csharp
+[AutoCurd<MyDbContext>("Your.Target.Namespace")]
+public partial class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+```
+
+生成规则和约定：
+- `Target.Namespace`（字符串）参数用于指定生成的接口/实现所在的命名空间。如果不指定或为空，生成器会使用程序集名称作为回退命名空间。
+- 为 `User` 生成的代码示例：
+  - 接口：`IUserCurdService`（包含 `CreateAsync`, `UpdateAsync`, `DeleteAsync`, `GetAsync`）
+  - 实现：`UserCurdService`（简单基于 `DbContext.Set<User>()` 的实现，方法为 `virtual`）
+- 如果你在代码中引用了这些生成的类型（例如在 `Program.cs` 中注入 `IUserCurdService`），请确保对应实体已标注 `AutoCurd`，否则编译器会找不到生成类型并导致构建失败。
+
+诊断与错误：
+- `GENCURD001`：当 `AutoCurd` 的泛型参数不是 `DbContext` 的派生类型时触发（例如 `[AutoCurd<User>("ns")]`），分析器将在特性处或类型处报告错误，说明需要传入正确的 `DbContext` 类型。
+
+示例：
+
+```csharp
+// 正确：DbContext 类型
+[AutoCurd<MyAppDbContext>("MyApp.Services.Curd")] 
+public partial class Product { ... }
+
+// 错误：User 不是 DbContext，将触发 GENCURD001
+[AutoCurd<User>("MyApp.Services.Curd")] 
+public partial class Order { ... }
+```
 
 ## 快速开始
 
@@ -107,7 +151,6 @@ Console.WriteLine(UserStatus.Deleted.Description()); // 输出: 已删除
 
 该库提供了一系列代码分析器，帮助您编写更规范、更高质量的代码：
 
-#### 生成器相关规则
 - `GEN001` : 检查接口继承关系，确保能正确生成实现类
 - `GEN011` : 防止生成类与接口名称冲突
 - `GEN021` : 建议使用统一的命名空间以提高代码组织性
@@ -153,4 +196,4 @@ Console.WriteLine(UserStatus.Deleted.Description()); // 输出: 已删除
 
 ### 开源协议
 
-本项目采用MIT协议开源，详见 [LICENSE](LICENSE.txt) 文件。
+本项目采用MIT协议开源，详见 [LICENSE](LICENSE.txt) 文件.

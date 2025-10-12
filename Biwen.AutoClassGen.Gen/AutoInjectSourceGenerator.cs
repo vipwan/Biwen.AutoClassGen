@@ -118,12 +118,14 @@ public class AutoInjectSourceGenerator : IIncrementalGenerator
                 }
                 else
                 {
+#pragma warning disable CA1031 // 不捕获常规异常类型
                     try
                     {
                         attributeSyntax = attr.Attributes.First(x =>
                             x.Name.ToString().IndexOf(attributeMetadataName, StringComparison.Ordinal) == 0);
                     }
                     catch { continue; }
+#pragma warning restore CA1031 // 不捕获常规异常类型
                 }
 
                 if (attrName?.IndexOf(attributeMetadataName, StringComparison.Ordinal) == 0)

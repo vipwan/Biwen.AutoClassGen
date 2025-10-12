@@ -11,6 +11,7 @@ using Biwen.AutoClassGen.TestConsole.Dtos;
 using Biwen.AutoClassGen.TestConsole.Entitys;
 using Biwen.AutoClassGen.TestConsole.ForBiwenQuickApi;
 using Biwen.AutoClassGen.TestConsole.Services;
+using Biwen.AutoClassGen.TestConsole.Services.ForCurd;
 using Biwen.AutoClassGen.TestLib;
 using System.Text.Json;
 
@@ -36,6 +37,15 @@ builder.Services.AddScoped<ClassService>();
 
 // add auto inject
 Biwen.AutoClassGen.TestConsole.AutoInjectExtension.AddAutoInject(builder.Services);
+
+// add db context for AutoCurd 
+builder.Services.AddDbContext<Biwen.AutoClassGen.TestConsole.Domains.MyDbContext>();
+
+// add service
+builder.Services.AddScoped<IHobbieCurdService, HobbieCurdService>();
+builder.Services.AddScoped<IUserCurdService, UserCurdService>();// add other service
+
+
 
 // add auto decor
 builder.Services.AddAutoDecor();
@@ -234,13 +244,6 @@ Console.WriteLine(JsonSerializer.Serialize(personComplexDto, options: new JsonSe
     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
 }));
 
-//AutoDtoWithMapper Attribute
-var userMyMapperDto = user.MapperToUserMyMapperDto();
-var userFromMyMapperDto = userMyMapperDto.MapperToUser();
-Console.WriteLine($"I`m {nameof(userMyMapperDto)} {userMyMapperDto.FirstName} {userMyMapperDto.LastName} I`m {userMyMapperDto.Age} years old");
-Console.WriteLine($"I`m {nameof(userFromMyMapperDto)} {userFromMyMapperDto.FirstName} {userFromMyMapperDto.LastName} I`m {userFromMyMapperDto.Age} years old");
-
-
 
 // 提供对外部库DTO转换的支持
 var testClass1 = new TestClass1
@@ -268,6 +271,49 @@ var colorEnum = Biwen.AutoClassGen.TestConsole.ColorEnum.Red;
 var colorEnum2 = Biwen.AutoClassGen.TestConsole.ColorEnum.LightBlue;
 
 Console.WriteLine($"From Description: {colorEnum.Description()}, Default: {colorEnum2.Description()}");
+
+
+
+//db context test
+using var dbContext = scope.ServiceProvider.GetRequiredService<Biwen.AutoClassGen.TestConsole.Domains.MyDbContext>();
+dbContext.Database.EnsureCreated();
+
+dbContext.Users.Add(new Biwen.AutoClassGen.TestConsole.Domains.User
+{
+    Id = 1,
+    Name = "biwen",
+    Email = "vipwan@test.co.ltd",
+    CreatedAt = DateTime.Now,
+    Hobbies = [
+        new Biwen.AutoClassGen.TestConsole.Domains.Hobbie
+        {
+            Name = "basketball",
+            Description = "I like basketball",
+        },
+        new Biwen.AutoClassGen.TestConsole.Domains.Hobbie
+        {
+            Name = "football",
+            Description = "I like football",
+        }
+    ]
+});
+dbContext.SaveChanges();
+
+// query user
+var dbUser = dbContext.Users.Include(u => u.Hobbies).FirstOrDefault();
+
+Console.WriteLine($"DbContext User: {dbUser?.Name} {dbUser?.Hobbies.Count} hobbies");
+
+// test curd service
+var userCurdService = scope.ServiceProvider.GetRequiredService<IUserCurdService>();
+var user1 = userCurdService.GetAsync(1);
+Console.WriteLine($"UserCurdService User: {user1.Result?.Name}");
+
+var hobbieCurdService = scope.ServiceProvider.GetRequiredService<IHobbieCurdService>();
+var hobbie1 = hobbieCurdService.GetAsync(1);
+Console.WriteLine($"HobbieCurdService Hobbie: {hobbie1.Result?.Name}");
+
+
 
 
 Console.ReadLine();
