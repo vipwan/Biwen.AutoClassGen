@@ -7,7 +7,7 @@ namespace Biwen.AutoClassGen.Analyzers;
 /// 将异步方法名改为以Async结尾
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
+internal class AsyncMethodNameAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "GEN051";
     private static readonly LocalizableString Title = "将异步方法名改为以Async结尾";

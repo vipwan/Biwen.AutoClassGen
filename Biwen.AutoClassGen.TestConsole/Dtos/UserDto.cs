@@ -58,18 +58,13 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
 
 
     [AutoDto<VenueImage>]
-    public partial class VenueImageDto
-    {
-
-    }
+    public partial class VenueImageDto;
 
     [AutoDto<Venue>(nameof(Venue.Images))]
     public partial class VenueDto
     {
         public IList<VenueImageDto>? Images { get; set; }
     }
-
-
 
 
     public class MyStaticMapper : IStaticAutoDtoMapper<User, UserMyMapperDto>
@@ -85,7 +80,7 @@ namespace Biwen.AutoClassGen.TestConsole.Dtos
 
 
     [AutoDtoWithMapper<User>(typeof(MyStaticMapper), nameof(User.Id), "TestCol")]
-    public partial class UserMyMapperErrorDto; //当前类没有实现IStaticAutoDtoMapper接口会报错
+    public partial class UserMyMapperErrorDto; //当前类没有实现IStaticAutoDtoMapper接口会警告,但是不影响生成
 
 
 }

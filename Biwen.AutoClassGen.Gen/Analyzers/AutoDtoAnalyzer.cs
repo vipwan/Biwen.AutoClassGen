@@ -8,7 +8,7 @@ using System.Linq;
 namespace Biwen.AutoClassGen.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class AutoDtoAnalyzer : DiagnosticAnalyzer
+internal class AutoDtoAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticIdGEN044 = "GEN044";
     public const string DiagnosticIdGEN045 = "GEN045";

@@ -10,7 +10,7 @@ namespace Biwen.AutoClassGen.Analyzers.BiwenQuickApi
 #pragma warning restore IDE0130 // 命名空间与文件夹结构不匹配
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class OptionsFieldTypeAnalyzer : DiagnosticAnalyzer
+    internal class OptionsFieldTypeAnalyzer : DiagnosticAnalyzer
     {
         // 诊断ID
         public const string DiagnosticId = "BWN001";
