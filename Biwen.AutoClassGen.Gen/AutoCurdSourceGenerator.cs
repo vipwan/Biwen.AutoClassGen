@@ -8,7 +8,7 @@ using System.Text;
 namespace Biwen.AutoClassGen;
 
 [Generator]
-internal class AutoGurdSourceGenerator : IIncrementalGenerator
+internal class AutoCurdSourceGenerator : IIncrementalGenerator
 {
     private const string GenericAutoCurdAttributeName = "Biwen.AutoClassGen.Attributes.AutoCurdAttribute`1";
     private const string NonGenericAutoCurdAttributeName = "Biwen.AutoClassGen.Attributes.AutoCurdAttribute";
